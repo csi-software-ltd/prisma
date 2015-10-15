@@ -1,0 +1,1 @@
+﻿<g:select name="executor" value="${task?.executor}" from="${executor}" optionKey="id" optionValue="name" noSelection="${['0':'не выбран']}"/> 

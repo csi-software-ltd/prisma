@@ -1,0 +1,1 @@
+﻿<g:select name="pers_id" value="" from="${pers}" optionKey="id" optionValue="shortname" noSelection="${['0':'не выбран']}" onchange="getPersCard(this.value)"/>

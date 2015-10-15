@@ -1,0 +1,1 @@
+﻿<g:select name="subclient_id" from="${subclients}" optionKey="id" optionValue="name" noSelection="${['0':'нет']}" onchange="togglesubcomsection(this.value)"/>

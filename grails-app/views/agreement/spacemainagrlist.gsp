@@ -1,0 +1,2 @@
+﻿<label for="mainagr_id">Основной договор:</label>
+<g:select name="mainagr_id" from="${agrs}" optionKey="id" noSelection="${['0':'не выбран']}" onchange="copyAddress(this.options[this.selectedIndex].text)"/>

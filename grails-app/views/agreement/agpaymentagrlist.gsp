@@ -1,0 +1,1 @@
+﻿<g:select id="agpayment_agreement_id" name="agreement_id" value="" from="${agrs}" optionKey="id" optionValue="${{(it.anumber +' от '+String.format('%td.%<tm.%<tY',it.adate))}}" noSelection="${['0':'не выбран']}"/>

@@ -1,0 +1,1 @@
+﻿<g:select name="acc_id" style="width:480px" from="${banks}" optionKey="id" optionValue="bankname"/>

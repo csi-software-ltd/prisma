@@ -1,0 +1,1 @@
+﻿<g:select name="expensetype_id" from="${expensetypes}" optionValue="name" optionKey="id" noSelection="${['0':'все']}"/>

@@ -1,0 +1,1 @@
+﻿<g:select class="mini" name="exppodrazdel_id" from="${exppodrazdel}" optionValue="name" optionKey="id" noSelection="${['0':'все']}" onchange="getexptypes(this.value)"/>

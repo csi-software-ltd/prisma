@@ -1,0 +1,1 @@
+﻿<g:select id="paytransfer_${field_id}" class="fullline" name="${field_id}" value="" from="${banks}" optionKey="id" optionValue="name" noSelection="${['':'не выбран']}"/>

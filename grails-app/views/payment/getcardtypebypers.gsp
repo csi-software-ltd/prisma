@@ -1,0 +1,1 @@
+﻿<g:select name="card" from="${card}" optionKey="id" optionValue="name" noSelection="${['-1':'не выбрана']}"/>
