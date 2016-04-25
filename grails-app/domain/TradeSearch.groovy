@@ -27,7 +27,7 @@ class TradeSearch {
   String client_name
   String supplier_name
 
-  def csiSelectTrades(sInn,sCompanyName,lResponsible,iDebt,iTradesort,iTradetype,iStatus,iMax,iOffset){
+  def csiSelectTrades(sInn,sCompanyName,lResponsible,iDebt,iTradesort,iTradetype,iStatus,iVision,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -41,7 +41,8 @@ class TradeSearch {
                 ((iDebt>0)?' and trade.debt>0':'')+
                 ((iTradesort>-100)?' and trade.tradesort=:tradesort':'')+
                 ((iTradetype>-100)?' and trade.tradetype=:tradetype':'')+
-                ((iStatus>-100)?' and trade.modstatus=:modstatus':'')
+                ((iStatus>-100)?' and trade.modstatus=:modstatus':'')+
+                (iVision>0?' and (if(c1.is_holding=0,0,c1.visualgroup_id)=:visualgroup_id or if(c2.is_holding=0,0,c2.visualgroup_id)=:visualgroup_id)':'')
     hsSql.order="trade.id desc"
 
     if(sInn!='')
@@ -56,6 +57,8 @@ class TradeSearch {
       hsLong['tradetype']=iTradetype
     if(iStatus>-100)
       hsLong['modstatus']=iStatus
+    if(iVision>0)
+      hsLong['visualgroup_id']=iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,
       null,null,iMax,iOffset,'trade.id',true,TradeSearch.class)

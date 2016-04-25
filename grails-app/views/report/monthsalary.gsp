@@ -38,7 +38,7 @@
           <td>${record.p_shortname}</td>
           <td>${number(value:record.actsalary)}</td>
           <td>${intnumber(value:record.prepayment)}</td>
-          <td>${number(value:record.offsalary)}</td>
+          <td>${number(value:record.sc_netsalary?:0)}</td>
           <td>${intnumber(value:record.cash)}</td>
           <td>
           <g:if test="${record.prepaystatus==2}"><abbr title="Да"><i class="icon-ok"></i></abbr></g:if>

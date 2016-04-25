@@ -37,7 +37,7 @@ class ImageService {
     }
     //CHECK CONTENT TYPE  //,"image/bmp","image/gif" - prohibited
 
-    if(!(fileImage.getContentType() in ["image/pjpeg","image/jpeg","image/png","image/x-png","application/pdf","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/msword"])){
+    if(!(fileImage.getContentType() in ["image/pjpeg","image/jpeg","image/png","image/x-png","application/pdf","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/msword","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","text/csv","text/comma-separated-values"])){
       hsRes.error = 3
       return hsRes
     }

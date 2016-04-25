@@ -1,17 +1,18 @@
 class Payment {
-  def searchService    
-  
+  def searchService
+
   static mapping = {
     version false
   }
   static constraints = {
+    id1c(unique:true)
     paydate(nullable:true)
-    paycat(nullable:true)   
+    paycat(nullable:true)
     summaold(nullable:true)
     moddate(nullable:true)
     file_id(nullable:true)
   }
-  
+
   public static final PAY_TYPE_EXPORT=1
   public static final PAY_TYPE_IMPORT=2
   public static final PAY_CAT_AGR=1
@@ -192,6 +193,7 @@ class Payment {
 
     paycat = hsInrequest?.paycat?:paycat
     is_dop = 0
+    is_third = hsInrequest?.is_third?:0
 
     if(paycat==Payment.PAY_CAT_AGR){
       agreement_id=hsInrequest?.agreement_id?:0
@@ -275,7 +277,7 @@ class Payment {
     "Дата платежа:${String.format('%td.%<tm.%<tY',paydate)}\nПлательщик:$fromcompany\nИНН Плательщика:$frominn\nПолучатель:$tocompany\nИНН получателя:$toinn\nСумма платежа:$summa\nНазначение платежа:$destination"
   }
 
-  def csiSelectPayment(hsInrequest,iMax,iOffset){
+  def csiSelectPayment(hsInrequest,iMax,iOffset,iVision=0){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -302,9 +304,10 @@ class Payment {
       ((hsInrequest?.is_dest)?' AND destination!=""':'')+
       ((hsInrequest?.is_bankmoney)?' AND is_bankmoney=1':'')+
       (hsInrequest?.internal==1?' AND is_internal=0':hsInrequest?.internal==2?' AND is_internal=1':'')+
-      (hsInrequest?.summa>0?' AND summa>=:summa_min and summa<:summa_max':'')+
+      (hsInrequest?.summa>0?' AND summa>=:summa_min and summa<:summa_max':hsInrequest?.strsumma=='0'?' AND summa=0':'')+
       (hsInrequest?.for_creation==1?' AND payrequest_id=0 AND (is_internal != 1 OR paytype != 2)':'')+
-      ((hsInrequest?.platperiod_year)?((hsInrequest?.platperiod_month)?' AND year(paydate)=:platyear and month(paydate)=:platmonth':' AND year(paydate)=:platyear'):'')
+      ((hsInrequest?.platperiod_year)?((hsInrequest?.platperiod_month)?' AND year(paydate)=:platyear and month(paydate)=:platmonth':' AND year(paydate)=:platyear'):'')+
+      (iVision>0?' and ((fromcompany_id=0 and tocompany_id=0) or IFNULL((select visualgroup_id from company where company.id=payment.fromcompany_id and is_holding=1),0)=:visualgroup_id or IFNULL((select visualgroup_id from company where company.id=payment.tocompany_id and is_holding=1),0)=:visualgroup_id)':'')
 
     hsSql.order="id desc"
 
@@ -350,6 +353,8 @@ class Payment {
       if(hsInrequest?.platperiod_month)
         hsLong['platmonth'] = hsInrequest.platperiod_month
     }
+    if(iVision>0)
+      hsLong['visualgroup_id'] = iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,null,null,iMax,iOffset,'id',true,Payment.class)
   }

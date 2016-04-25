@@ -14,7 +14,7 @@
       <g:each in="${payments}" var="record">
         <tr align="center">
           <td>${String.format('%td.%<tm.%<tY',record.paydate)}</td>
-          <td><g:link controller="payment" action="paymentdetail" id="${record.id}">${record.platnumber}</g:link></td>
+          <td><g:link style="z-index:1" controller="payment" action="paymentdetail" id="${record.id}">${record.platnumber}</g:link></td>
           <td>${number(value:record.summa)}</td>
           <td>${record.destination}</td>
           <td>${record.is_dop?'Да':'Нет'}</td>

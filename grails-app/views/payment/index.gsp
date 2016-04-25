@@ -128,6 +128,7 @@
         $('is_noclient').checked = true;
         $('is_noinner').checked = true;
         $('is_notag').checked = false;
+        if ($('is_payconfirm')) $('is_payconfirm').checked = false;
       }
       function scrollPayrequestToAnchor(){        
         if(iPayrequestAnchorId){
@@ -249,7 +250,7 @@
         $('modstatus').selectedIndex = 0;
         $('client_id').selectedIndex = 0;
         $('paytype').selectedIndex = 0;
-        $('is_deal').checked = false;
+        $('is_repayment').checked = false;
         $('is_noinner').checked = true;
         getSubclientsList(0)
       }

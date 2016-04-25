@@ -355,7 +355,7 @@
   </head>
   <body onload="init();">
     <h3 class="fleft">Платеж № ${payment.id1c} (${payment.id})<g:if test="${payment.is_error}">&nbsp;(корр.)</g:if></h3>
-    <a class="button back fright" href="javascript:void(0)" onclick="returnToList();"><i class="icon-angle-left icon-large"></i>&nbsp; К списку платежей</a>
+    <a class="button back fright" href="javascript:void(0)" onclick="returnToList()"><i class="icon-angle-left icon-large"></i>&nbsp; К списку платежей</a>
     <div class="clear"></div>
     
     <div class="info-box" style="display:none;margin-top:0">
@@ -623,6 +623,9 @@
         </g:if><g:elseif test="${iscandelete}">
           <g:remoteLink class="button" url="${[controller:'payment',action:'deletegenpayrequest',id:payment.id]}" onSuccess="location.reload(true)">Удалить фактический платеж &nbsp;<i class="icon-angle-right icon-large"></i></g:remoteLink>
         </g:elseif>
+        <g:if test="${iscanselfdelete}">
+          <g:remoteLink class="button" before="if(!confirm('Вы действительно хотите удалить платеж?')) return false" url="${[controller:'payment',action:'deletePayment',id:payment.id]}" onSuccess="returnToList()">Удалить платеж &nbsp;<i class="icon-angle-right icon-large"></i></g:remoteLink>
+        </g:if>
         <g:if test="${user?.group?.is_payedit}">
           <input type="button" value="Сохранить и выйти" onclick="submitExit()"/>
           <input type="submit" id="submit_button" value="Сохранить"/>

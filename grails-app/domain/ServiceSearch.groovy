@@ -26,7 +26,7 @@ class ServiceSearch {
   String zcompany_name
   String ecompany_name
 
-  def csiSelectServices(iId,sZCompanyName,sECompanyName,iServicetype,iAsort,iStatus,dDate,iMax,iOffset){
+  def csiSelectServices(iId,sZCompanyName,sECompanyName,iServicetype,iAsort,iStatus,dDate,iVision,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -40,7 +40,8 @@ class ServiceSearch {
                 ((iServicetype>0)?' and service.atype=:atype':'')+
                 ((iAsort>0)?' and service.asort=:asort':'')+
                 ((iStatus>-100)?' and service.modstatus=:modstatus':'')+
-                ((dDate)?' and service.enddate<:enddate':'')
+                ((dDate)?' and service.enddate<:enddate':'')+
+                (iVision>0?' and (if(c1.is_holding=0,0,c1.visualgroup_id)=:visualgroup_id or if(c2.is_holding=0,0,c2.visualgroup_id)=:visualgroup_id)':'')
     hsSql.order="service.id desc"
 
     if(iId>0)
@@ -57,6 +58,8 @@ class ServiceSearch {
       hsLong['modstatus'] = iStatus
     if(dDate)
       hsString['enddate'] = String.format('%tF',dDate)
+    if(iVision>0)
+      hsLong['visualgroup_id']=iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,null,null,iMax,iOffset,'service.id',true,ServiceSearch.class)
   }

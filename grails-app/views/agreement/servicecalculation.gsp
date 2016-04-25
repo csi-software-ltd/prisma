@@ -1,9 +1,13 @@
-﻿<label for="servcalc_summa">Сумма платежа:</label>
-<input type="text" id="servcalc_summa" name="summa" value="${number(value:servcalc.summa)}"/>
+﻿<g:if test="${!servcalc}">
+	<label for="servcalc_maindate">Период:</label>
+	<g:datepicker class="normal nopad" name="servcalc_maindate" depth="year" value=""/><br/>
+</g:if>
+<label for="servcalc_summa">Сумма платежа:</label>
+<input type="text" id="servcalc_summa" name="summa" value="${number(value:servcalc?.summa)}"/>
 <br/><label for="servcalc_schet">Номер счета:</label>
-<input type="text" id="servcalc_schet" name="schet" value="${servcalc.schet}"/>
+<input type="text" id="servcalc_schet" name="schet" value="${servcalc?.schet}"/>
 <label for="servcalc_schetdate">Дата счета:</label>
-<g:datepicker class="normal nopad" name="servcalc_schetdate" value="${servcalc.schetdate?String.format('%td.%<tm.%<tY',servcalc.schetdate):''}"/>
+<g:datepicker class="normal nopad" name="servcalc_schetdate" value="${servcalc?.schetdate?String.format('%td.%<tm.%<tY',servcalc.schetdate):''}"/>
 <div class="clear"></div>
 <div class="fright">
 <g:if test="${iscanedit}">

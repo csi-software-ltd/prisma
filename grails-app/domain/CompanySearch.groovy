@@ -45,7 +45,7 @@ class CompanySearch {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  def csiSelectCompanies(iId,sName,sBankname,sOkved,iProject,iTaxoption,iBankaccount,iHolding,sGd,sTaxinspectionDistrict,lResponsibleId,iIsLicense,iIsWww,sColor,iFill,iVision,iMax,iOffset){
+  def csiSelectCompanies(iId,sName,sBankname,sOkved,iProject,iTaxoption,iBankaccount,iHolding,sGd,sTaxinspectionDistrict,lResponsibleId,iIsLicense,iIsWww,sColor,iFill,iVision,hsAddParams,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'',group:'']
     def hsLong=[:]
     def hsString=[:]
@@ -54,7 +54,7 @@ class CompanySearch {
     hsSql.from='company left join compokved on (company.id=compokved.company_id) left join (bankaccount join bank on(bankaccount.bank_id=bank.id and bankaccount.typeaccount_id = 1)) on (company.id=bankaccount.company_id) left join cproject on (cproject.company_id=company.id)'
     hsSql.where="1=1"+
                 ((iId>0)?' AND company.id =:company_id':'')+
-                ((sName!='')?' AND company.name like concat("%",:company_name,"%")':'')+
+                ((sName!='')?' AND (company.name like concat("%",:company_name,"%") OR company.inn like concat(:company_name,"%"))':'')+
                 ((sBankname!='')?' AND bank.name like concat("%",:bankname,"%")':'')+
                 ((sGd!='')?' AND company.gd like concat("%",:gd,"%")':'')+
                 ((sOkved!='')?' AND compokved.okved_id =:okved':'')+
@@ -67,7 +67,10 @@ class CompanySearch {
                 ((iIsLicense>0)?' AND (select count(*) from complicense where company_id=company.id and modstatus=1) > 0':'')+
                 (iIsWww==1?" AND company.www!=''":iIsWww==0?" and company.www=''":'')+
                 ((sColor!='')?' AND company.color like concat("%",:color,"%")':'')+
-                (iFill==1?' AND company.colorfill = 1':iFill==0?' AND company.colorfill = 0':'')
+                (iFill==1?' AND company.colorfill = 1':iFill==0?' AND company.colorfill = 0':'')+
+                (hsAddParams?.cgroup_id>-100?' AND company.cgroup_id =:cgroup_id':'')+
+                (hsAddParams?.visualgroup_id>-100?' AND company.visualgroup_id =:visualgroup_id':'')+
+                (hsAddParams?.is_inactive==1?' AND company.activitystatus_id in (select id from activitystatus where is_close=1)':'')
     hsSql.order="company.name asc"
     hsSql.group="company.id"
 
@@ -93,6 +96,10 @@ class CompanySearch {
       hsString['district']=sTaxinspectionDistrict
     if(sColor!='')
       hsString['color']=sColor
+    if(hsAddParams?.cgroup_id>-100)
+      hsLong['cgroup_id']=hsAddParams.cgroup_id
+    if(hsAddParams?.visualgroup_id>-100)
+      hsLong['visualgroup_id']=hsAddParams.visualgroup_id
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,null,null,iMax,iOffset,'*',true,CompanySearch.class)
   }

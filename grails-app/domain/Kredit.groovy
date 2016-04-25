@@ -45,6 +45,7 @@ class Kredit {
   Integer is_agr
   Integer is_cbcalc
   Integer client_id = 0
+  Integer curclient_id = 0
   Integer zalogstatus = 1
   Integer cessionstatus = 0
   String sschet = ''
@@ -61,10 +62,14 @@ class Kredit {
   def afterInsert(){
     new Kredithist(kredit_id:id,admin_id:admin_id,dopagrcomment:dopagrcomment).setData(properties).save(failOnError:true)
     new Kreditdopagr(kredit_id:id).fillFrom(this).save(failOnError:true)
+    new Agentperiod(kredit_id:id).fillFrom(this).save(failOnError:true)
   }
 
   def beforeUpdate(){
     if(isHaveDirty()) new Kredithist(kredit_id:id,admin_id:admin_id,dopagrcomment:dopagrcomment).setData(properties).save(failOnError:true)
+    if(isDirty('startdate')){ def _startdate = getPersistentValue('startdate'); Agentperiod.withNewSession{ Agentperiod.findByKredit_idAndStartdate(id,_startdate)?.csiSetStartdate(startdate)?.save(flush:true) }}
+    if(isDirty('enddate')) { def _enddate = getPersistentValue('enddate'); Agentperiod.withNewSession{ Agentperiod.findByKredit_idAndEnddate(id,_enddate)?.csiSetEnddate(enddate)?.save(flush:true) }}
+    if(isDirty('client_id')) { def _client_id = getPersistentValue('client_id'); Agentperiod.withNewSession{ Agentperiod.findByKredit_idAndClient_id(id,_client_id)?.csiSetClient_id(client_id)?.save(flush:true) }}
   }
 
   String toString(){
@@ -84,7 +89,7 @@ class Kredit {
   }
 
   static def getClientsBank(lsBankId,iClientId){
-    Kredit.findAllByBank_idInListAndClient_idAndModstatus(lsBankId,iClientId,1).collect{it.client}.unique().collect{Company.get(it)}
+    Kredit.findAllByBank_idInListAndIdInListAndModstatus(lsBankId,Agentperiod.findAllByClient_id(iClientId).collect{it.kredit_id}?:[0],1).collect{it.client}.unique().collect{Company.get(it)}
   }
 
   static def getCessionBanks(){
@@ -121,7 +126,7 @@ class Kredit {
     is_tech = _request.kreditsort==1?1:0
     is_realtech = _request.kreditsort==2?1:0
     startsumma = _request.startsumma?:0.0g
-    agentsum = _request.agentsum?:0.0g
+    agentsum = Agentkredit.findAllByKredit_id(id?:0)?agentsum:_request.agentsum?:0.0g
     startsaldodate = _request.startsaldodate
     valuta_id = _request.valuta_id?:857
     payterm = kredtype==3?0:_request.payterm
@@ -133,6 +138,7 @@ class Kredit {
     is_agr = _request.is_agr?:0
     is_cbcalc = _request.is_cbcalc?:0
     client_id = _request.client_id==-1?0:_request.client_id?:client_id
+    curclient_id = cessionstatus?curclient_id:client_id
     sschet = _request?.sschet?_request.sschet.replace('.',''):''
     percschet = _request?.percschet?_request.percschet.replace('.',''):''
     comschet = _request?.comschet?_request.comschet.replace('.',''):''
@@ -148,6 +154,7 @@ class Kredit {
     enddate = _dopagr.enddate
     summa = _dopagr.summa
     rate = _dopagr.rate
+    if (_dopagr.id==Kreditdopagr.getMinId(id)) startdate = _dopagr.startdate
     this
   }
 
@@ -178,6 +185,15 @@ class Kredit {
 
   Kredit csiSetStartdate(dStartdate){
     startdate = dStartdate?:startdate
+    this
+  }
+
+  Kredit csiSetCurclient(iClientId, Date _cdate){
+    if(curclient_id!=iClientId){
+      curclient_id = iClientId
+      Agentperiod.findByKredit_idAndEnddate(id,enddate)?.csiSetEnddate(_cdate-1)?.save()
+      new Agentperiod(kredit_id:id).csiSetStartdate(_cdate).csiSetEnddate(enddate).csiSetClient_id(iClientId).save()
+    }
     this
   }
 

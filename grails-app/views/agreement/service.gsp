@@ -133,10 +133,16 @@
           if($(ids))
             $(ids).removeClassName('red');
         });
+        ['servcalc_maindate'].forEach(function(ids){
+          if($(ids))
+            $(ids).up('span').removeClassName('k-error-colored');
+        });
         if(e.responseJSON.errorcode.length){
           e.responseJSON.errorcode.forEach(function(err){
             switch (err) {
               case 1: sErrorMsg+='<li>${message(code:"error.incorrect.message",args:["Сумма платежа"])}</li>'; $('servcalc_summa').addClassName('red'); break;
+              case 2: sErrorMsg+='<li>${message(code:"error.blank.message",args:["Период"])}</li>'; $('servcalc_maindate').up('span').addClassName('k-error-colored'); break;
+              case 3: sErrorMsg+='<li>${message(code:"error.not.unique2.message",args:["Начисление","периодом"])}</li>'; $('servcalc_maindate').up('span').addClassName('k-error-colored'); break;
               case 100: sErrorMsg+='<li>${message(code:"error.bderror.message")}</li>'; break;
             }
           });

@@ -105,33 +105,55 @@
               </td>              
             </tr>
           </g:if>
-          <tr>  
+          <tr>
             <td>Почтовый адрес</td>
             <td>${company?.postadr?:''}</td>
           </tr>
-          <tr>  
+          <tr>
             <td>Адрес офиса</td>
             <td>
               <g:each in="${office}" var="item" status="i">
                 <g:if test="${i}">
                   <br/>
-                </g:if>             
-                ${item?.fulladdress?:''}                             
+                </g:if>
+                ${item?.fulladdress?:''}
               </g:each>
-            </td>              
-          </tr> 
-          <tr>  
+            </td>
+          </tr>
+          <tr>
+            <td>Адрес офиса (архив)</td>
+            <td>
+              <g:each in="${officeold}" var="item" status="i">
+                <g:if test="${i}">
+                  <br/>
+                </g:if>
+                ${item?.fulladdress?:''}
+              </g:each>
+            </td>
+          </tr>
+          <tr>
             <td>Адрес склада</td>
             <td>
               <g:each in="${wh}" var="item" status="i">
                 <g:if test="${i}">
                   <br/>
-                </g:if>               
-                ${item?.fulladdress?:''}                
+                </g:if>
+                ${item?.fulladdress?:''}
               </g:each>
-            </td>              
+            </td>
           </tr>
-          <tr>  
+          <tr>
+            <td>Адрес склада (архив)</td>
+            <td>
+              <g:each in="${whold}" var="item" status="i">
+                <g:if test="${i}">
+                  <br/>
+                </g:if>
+                ${item?.fulladdress?:''}
+              </g:each>
+            </td>
+          </tr>
+          <tr>
             <td>Контактная информация</td>
             <td>${company.tel?'тел.:'+company.tel:''}&nbsp;${company.email?'email:'+company.email:''}&nbsp;${company.www?'сайт:'+company.www:''}</td>
           </tr>

@@ -96,7 +96,10 @@ class Usergroup {
   Integer is_taskpayall = 0
   Integer is_enquiry = 0
   Integer is_enquiryedit = 0
-  Integer is_payment = 0  
+  Integer is_payment = 0
+  Integer is_payedit = 0
+  Integer is_paytag = 0
+  Integer is_payconfirm = 0
   Integer is_bankedit = 0
   Integer is_bankinsert = 0  
   Integer is_taxedit = 0
@@ -144,9 +147,6 @@ class Usergroup {
   Integer is_paynalogedit = 0
   Integer is_payproject = 0
   Integer is_dopcardpayment = 0
-
-  Integer is_payedit = 0
-  Integer is_paytag = 0    
 
   def csiFindUsergroup(sGroupName,iDepartmentId,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']

@@ -32,7 +32,7 @@ class CessionSearch {
   String bank_name
   String cedent_name
 
-  def csiSelectCessions(sInn,sCompanyName,sBankId,iValutaId,iAgrId,iChangeType,iStatus,iMax,iOffset){
+  def csiSelectCessions(sInn,sCompanyName,sBankId,iValutaId,iAgrId,iChangeType,iStatus,iVision,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -46,7 +46,8 @@ class CessionSearch {
                 ((iValutaId>0)?' and cession.valuta_id=:valuta_id':'')+
                 ((iAgrId>0)?' and cession.agr_id=:agr_id':'')+
                 ((iChangeType>0)?' and cession.changetype=:changetype':'')+
-                ((iStatus>-100)?' and cession.modstatus=:modstatus':'')
+                ((iStatus>-100)?' and cession.modstatus=:modstatus':'')+
+                (iVision>0?' and (if(c1.is_holding=0,0,c1.visualgroup_id)=:visualgroup_id or if(c2.is_holding=0,0,c2.visualgroup_id)=:visualgroup_id or if(IFNULL(c3.is_holding,0)=0,0,c3.visualgroup_id)=:visualgroup_id)':'')
     hsSql.order="cession.id desc"
 
     if(sInn!='')
@@ -63,6 +64,8 @@ class CessionSearch {
       hsLong['changetype']=iChangeType
     if(iStatus>-100)
       hsLong['modstatus']=iStatus
+    if(iVision>0)
+      hsLong['visualgroup_id']=iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,
       null,null,iMax,iOffset,'cession.id',true,CessionSearch.class)

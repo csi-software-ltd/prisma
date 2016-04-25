@@ -123,6 +123,7 @@
       function init(){
         jQuery('.nav').find('li:visible > a:first').click();
         jQuery("#sfacturadate").mask("99.99.9999",{placeholder:" "});
+        if(jQuery("#indate")) jQuery("#indate").mask("99.99.9999",{placeholder:" "});
       }
     </g:javascript>
     <style type="text/css">

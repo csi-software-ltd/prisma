@@ -52,18 +52,23 @@
     <g:if test="${isSuper}">
       <label for="atext">Текст ответа:</label>
       <g:textArea id="atext" rows="6" name="atext" value=""/>
-      <label for="file">Загрузить файл:</label>
-      <input type="file" id="file" name="file" style="width:256px"/>
     </g:if><g:else>
       <label for="qtext">Уточнить вопрос:</label>
       <g:textArea id="qtext" rows="6" name="qtext" value=""/>
     </g:else>
+      <label for="file">Загрузить файл:</label>
+      <input type="file" id="file" name="file" style="width:256px"/>
 
       <div class="clear"></div>
       <div class="fright" id="btns" style="padding-top:10px;margin-bottom:20px">
+      <g:if test="${question.example_id}">
+        <a class="button" href="${createLink(action:'showscan',id:question.example_id,params:[code:Tools.generateModeParam(question.example_id)])}" target="_blank">
+          Файл пример&nbsp;<i class="icon-angle-right icon-large"></i>
+        </a>
+      </g:if>
       <g:if test="${question.file_id}">
         <a class="button" href="${createLink(action:'showscan',id:question.file_id,params:[code:Tools.generateModeParam(question.file_id)])}" target="_blank">
-          Просмотреть поясняющую картинку &nbsp;<i class="icon-angle-right icon-large"></i>
+          Файл ответ&nbsp;<i class="icon-angle-right icon-large"></i>
         </a>
       </g:if>
       <g:if test="${question.modstatus==1&&isSuper}">

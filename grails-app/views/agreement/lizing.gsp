@@ -374,8 +374,8 @@
     <div class="tabs">
       <ul class="nav">
         <li><a href="javascript:void(0)" onclick="viewCell(0)">График платежей</a></li>
-        <li style="${!iscanpay?'display:none':''}"><a href="javascript:void(0)" onclick="viewCell(1)">Заявки на платежи</a></li>
-        <li style="${!iscanpay?'display:none':''}"><a href="javascript:void(0)" onclick="viewCell(2)">Платежи</a></li>
+        <li style="${!iscanpay?'display:none':''}"><a href="javascript:void(0)" onclick="viewCell(1)">Платежи</a></li>
+        <li style="${!iscanpay?'display:none':''}"><a href="javascript:void(0)" onclick="viewCell(2)">Платежи по выписке</a></li>
         <li style="${!iscanpay?'display:none':''}"><a href="javascript:void(0)" onclick="viewCell(3)">Побочные платежи</a></li>
         <li><a href="javascript:void(0)" onclick="viewCell(4)">Доп. соглашения</a></li>
         <li><a href="javascript:void(0)" onclick="viewCell(5)">История</a></li>

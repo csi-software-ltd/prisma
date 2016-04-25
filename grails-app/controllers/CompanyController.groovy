@@ -115,12 +115,14 @@ class CompanyController {
     } else {
       hsRes.inrequest=[:]
       hsRes.inrequest.is_holding = requestService.getIntDef('is_holding',1)
+      hsRes.inrequest.is_inactive = requestService.getIntDef('is_inactive',0)
     }
 
     hsRes.colors = Color.list()
     hsRes.projects = Project.list()
     hsRes.taxoptions = Taxoption.list()
     hsRes.responsiblies = User.findAllByDepartment_idAndModstatus(10,1)
+    hsRes.is_visual = session.user.group.visualgroup_id==0
     hsRes.iscanincert = recieveSectionAccess(CINCERT)
 
     return hsRes
@@ -137,8 +139,9 @@ class CompanyController {
       hsRes.inrequest = session.companylastRequest
       session.companylastRequest.fromDetails = 0
     } else {
-      hsRes+=requestService.getParams(['is_holding','project_id','taxoption_id','bankaccount','is_license','www','colorfill'],
-                                      ['responsible'],['cname','okved','bankname','gd','district','color'])
+      hsRes+=requestService.getParams(['is_holding','project_id','taxoption_id','bankaccount','is_license','www',
+                                       'colorfill','cgroup_id','visualgroup_id','is_inactive'],['responsible'],
+                                       ['cname','okved','bankname','gd','district','color'])
       hsRes.inrequest.offset = requestService.getOffset()
       session.companylastRequest = [:]
       session.companylastRequest = hsRes.inrequest
@@ -151,7 +154,8 @@ class CompanyController {
                                                             hsRes.inrequest.district?:'',hsRes.inrequest.responsible?:0l,
                                                             hsRes.inrequest.is_license?:0,hsRes.inrequest.www?:0,
                                                             hsRes.inrequest.color?:'',hsRes.inrequest.colorfill?:0,
-                                                            session.user.group.visualgroup_id,20,hsRes.inrequest.offset)
+                                                            session.user.group.visualgroup_id,hsRes.inrequest,20,
+                                                            hsRes.inrequest.offset)
     hsRes.accounts = hsRes.requests.records.inject([:]){map, company -> map[company.id]=new BankaccountSearch().csiFindAccounts(company.id,1,1);map}
     hsRes.colors = Color.list()
 
@@ -1423,11 +1427,15 @@ class CompanyController {
 
     hsRes.accounts = new BankaccountSearch().csiFindAccounts(hsRes.company.id)
     def iOffice=Spacetype.findWhere(name:'Офис')?.id?:0
-    if(iOffice)
+    if(iOffice){
       hsRes.office=Space.findAllByArendatorAndSpacetype_idAndModstatus(hsRes.company?.id?:0,iOffice,1)
+      hsRes.officeold=Space.findAllByArendatorAndSpacetype_idAndModstatus(hsRes.company?.id?:0,iOffice,0)
+    }
     def iWh=Spacetype.findWhere(name:'Склад')?.id?:0
-    if(iWh)
-      hsRes.wh=Space.findAllByArendatorAndSpacetype_idAndModstatus(hsRes.company?.id?:0,iWh,1) 
+    if(iWh){
+      hsRes.wh=Space.findAllByArendatorAndSpacetype_idAndModstatus(hsRes.company?.id?:0,iWh,1)
+      hsRes.whold=Space.findAllByArendatorAndSpacetype_idAndModstatus(hsRes.company?.id?:0,iWh,0)
+    }
 
     def lsLicense=new License().csiFindLicenceIndustry(lId)      
     hsRes.industry=[]

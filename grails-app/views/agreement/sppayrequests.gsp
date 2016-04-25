@@ -21,18 +21,6 @@
         </tr>
       </thead>
       <tbody>
-      <g:each in="${payrequests}" var="record">
-        <tr align="center">
-          <td width="70">${String.format('%td.%<tm.%<tY',record.paydate)}</td>
-          <td>${number(value:record.summa)}<br/>${record.is_nds?'с НДС':'без НДС'}</td>
-          <td>${record.destination}</td>
-          <td width="70">${record.is_dop?'Да':'Нет'}</td>
-          <td width="100">${record.modstatus==1?'В работе':record.modstatus==2?'Выполнен':record.modstatus==3?'Подтвержден':'Необработанный'}</td>
-          <td>
-            <g:link controller="payment" action="payrequestdetail" id="${record.id}" style="z-index:1" class="button" target="_blank"><i class="icon-pencil"></i></g:link>
-          </td>
-        </tr>
-      </g:each>
       <g:if test="${iscanedit}">
         <tr>
           <td colspan="6" class="btns" style="text-align:center">
@@ -48,6 +36,18 @@
           </td>
         </tr>
       </g:elseif>
+      <g:each in="${payrequests}" var="record">
+        <tr align="center">
+          <td width="70">${String.format('%td.%<tm.%<tY',record.paydate)}</td>
+          <td>${number(value:record.summa)}<br/>${record.is_nds?'с НДС':'без НДС'}</td>
+          <td>${record.destination}</td>
+          <td width="70">${record.is_dop?'Да':'Нет'}</td>
+          <td width="100">${record.modstatus==1?'В работе':record.modstatus==2?'Выполнен':record.modstatus==3?'Подтвержден':'Необработанный'}</td>
+          <td>
+            <g:link controller="payment" action="payrequestdetail" id="${record.id}" style="z-index:1" class="button" target="_blank"><i class="icon-pencil"></i></g:link>
+          </td>
+        </tr>
+      </g:each>
       </tbody>
     </table>
   </div>

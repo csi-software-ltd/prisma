@@ -43,7 +43,7 @@ class KreditSearch {
     "$client_name - $bank_name - $anumber от ${String.format('%td.%<tm.%<tY',adate)}"
   }
 
-  def csiSelectKredits(iId,sInn,sCompanyName,sBankName,iValutaId,iReal,iTech,iRealtech,lResponsible,iCession,iZalog,iStatus,iNoCheck,bShowReal,iMax,iOffset){
+  def csiSelectKredits(iId,sInn,sCompanyName,sBankName,iValutaId,iReal,iTech,iRealtech,lResponsible,iCession,iZalog,iStatus,iNoCheck,bShowReal,iVision,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -64,6 +64,7 @@ class KreditSearch {
                 ((iZalog>0)?' and kredit.zalogstatus=:zalogstatus':'')+
                 ((iStatus>-100)?' and kredit.modstatus=:modstatus':'')+
                 ((iNoCheck>0)?' and kredit.is_check=0':'')+
+                (iVision>0?' and IFNULL(c2.visualgroup_id,company.visualgroup_id)=:visualgroup_id':'')+
                 (!bShowReal?' and kredit.is_tech=1':'')
     hsSql.order="kredit.adate desc"
 
@@ -83,6 +84,8 @@ class KreditSearch {
       hsLong['modstatus']=iStatus
     if(lResponsible>0)
       hsLong['responsible']=lResponsible
+    if(iVision>0)
+      hsLong['visualgroup_id']=iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,
       null,null,iMax,iOffset,'kredit.id',true,KreditSearch.class)
@@ -122,7 +125,7 @@ class KreditSearch {
 
     hsSql.select="*, company.name as client_name, bank.shortname as bank_name, '' as creditor_name"
     hsSql.from='kredit, company, bank'
-    hsSql.where="kredit.client=company.id and kredit.bank_id=bank.id and kredit.cessionstatus=0 and kredit.kredtype<3 and kredit.modstatus=1"
+    hsSql.where="kredit.client=company.id and kredit.bank_id=bank.id and kredit.kredtype<3 and kredit.modstatus=1"
     hsSql.order="bank.shortname asc, company.name asc, kredit.anumber asc"
 
     searchService.fetchData(hsSql,null,null,null,null,KreditSearch.class)

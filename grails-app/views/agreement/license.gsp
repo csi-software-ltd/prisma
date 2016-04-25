@@ -102,12 +102,16 @@
 
         switch(iNum){
           case 0: getPlanpayment();break;
-          case 1: getPayments();break;
-          case 2: getHistory();break;
+          case 1: getPayrequests();break;
+          case 2: getPayments();break;
+          case 3: getHistory();break;
         }
       }
       function getPlanpayment(){
         if(${license?1:0}) $('planpayments_submit_button').click();
+      }
+      function getPayrequests(){
+        if(${license?1:0}) $('payrequests_submit_button').click();
       }
       function getPayments(){
         if(${license?1:0}) $('payments_submit_button').click();
@@ -209,7 +213,8 @@
       <ul class="nav">
         <li><a href="javascript:void(0)" onclick="viewCell(0)">График платежей</a></li>
         <li><a href="javascript:void(0)" onclick="viewCell(1)">Платежи</a></li>
-        <li><a href="javascript:void(0)" onclick="viewCell(2)">История</a></li>
+        <li><a href="javascript:void(0)" onclick="viewCell(2)">Платежи по выписке</a></li>
+        <li><a href="javascript:void(0)" onclick="viewCell(3)">История</a></li>
       </ul>
       <div class="tab-content">
         <div class="inner">
@@ -219,6 +224,9 @@
     </div>
     <g:formRemote name="planpaymentsForm" url="[action:'licplanpayments',id:license.id]" update="details">
       <input type="submit" class="button" id="planpayments_submit_button" value="Показать" style="display:none" />
+    </g:formRemote>
+    <g:formRemote name="payrequestsForm" url="[action:'licpayrequests',id:license.id]" update="details">
+      <input type="submit" class="button" id="payrequests_submit_button" value="Показать" style="display:none" />
     </g:formRemote>
     <g:formRemote name="paymentsForm" url="[action:'licpayments',id:license.id]" update="details">
       <input type="submit" class="button" id="payments_submit_button" value="Показать" style="display:none" />

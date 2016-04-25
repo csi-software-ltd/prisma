@@ -11,7 +11,7 @@ class Agentrateforperiods {
   Integer is_display
 
   Agentrateforperiods setMainData(_prop){
-    properties = _prop
+    if (!id) properties = _prop
     this
   }
 

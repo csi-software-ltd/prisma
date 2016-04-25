@@ -33,7 +33,7 @@ class LoanSearch {
   String lender_name
   String lenderpers_name
 
-  def csiSelectLoans(sClientName,sLenderName,iLoanType,iStatus,iMax,iOffset){
+  def csiSelectLoans(sClientName,sLenderName,iLoanType,iStatus,iVision,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -44,7 +44,8 @@ class LoanSearch {
                 ((sClientName!='')?' and (c1.name like concat("%",:client_name,"%") or p1.shortname like concat("%",:client_name,"%"))':'')+
                 ((sLenderName!='')?' and (c2.name like concat("%",:lender_name,"%") or p2.shortname like concat("%",:lender_name,"%"))':'')+
                 ((iLoanType>-100)?' and loan.loantype=:loantype':'')+
-                ((iStatus>-100)?' and loan.modstatus=:modstatus':'')
+                ((iStatus>-100)?' and loan.modstatus=:modstatus':'')+
+                (iVision>0?' and (if(IFNULL(c1.is_holding,0)=0,0,c1.visualgroup_id)=:visualgroup_id or if(IFNULL(c2.is_holding,0)=0,0,c2.visualgroup_id)=:visualgroup_id)':'')
     hsSql.order="loan.id desc"
 
     if(sClientName!='')
@@ -55,6 +56,8 @@ class LoanSearch {
       hsLong['loantype'] = iLoanType
     if(iStatus>-100)
       hsLong['modstatus'] = iStatus
+    if(iVision>0)
+      hsLong['visualgroup_id'] = iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,null,null,iMax,iOffset,'loan.id',true,LoanSearch.class)
   }

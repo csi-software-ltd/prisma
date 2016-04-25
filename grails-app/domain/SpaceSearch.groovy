@@ -76,7 +76,7 @@ class SpaceSearch {
     searchService.fetchData(hsSql,hsLong,null,null,null,SpaceSearch.class)
   }
 
-  def csiSelectSpaces(iId,sAddress,sCompanyName,iArendatype,iSpacetype,iProjectId,lResponsible,iDebt,iIsnds,iSame,iStatus,dDate,sAnumber,iMax,iOffset){
+  def csiSelectSpaces(iId,sAddress,sCompanyName,iArendatype,iSpacetype,iProjectId,lResponsible,iDebt,iIsnds,iSame,iStatus,dDate,sAnumber,iVision,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -96,7 +96,8 @@ class SpaceSearch {
                 (iIsnds==1?' and c2.taxoption_id=1':iIsnds==0?' and c2.taxoption_id>1':'')+
                 ((iStatus>-100)?' and space.modstatus=:modstatus':'')+
                 ((dDate)?' and space.enddate<:enddate':'')+
-                ((sAnumber!='')?' and space.anumber like concat("%",:anumber,"%")':'')
+                ((sAnumber!='')?' and space.anumber like concat("%",:anumber,"%")':'')+
+                (iVision>0?' and (c1.visualgroup_id=:visualgroup_id or if(space.arendatype_id=1,0,c2.visualgroup_id)=:visualgroup_id)':'')
     hsSql.order="if(space.arendatype_id=1,space.id,if(space.subsub_id=0,space.mainagr_id,space.subsub_id)) desc, space.arendatype_id asc, if(space.subsub_id=0,space.id,space.mainagr_id) desc, space.subsub_id asc"
 
     if(iId>0)
@@ -119,6 +120,8 @@ class SpaceSearch {
       hsString['enddate']=String.format('%tF',dDate)
     if(sAnumber!='')
       hsString['anumber']=sAnumber
+    if(iVision>0)
+      hsLong['visualgroup_id']=iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,null,null,iMax,iOffset,'space.id',true,SpaceSearch.class)
   }

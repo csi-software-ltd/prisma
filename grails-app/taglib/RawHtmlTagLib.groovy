@@ -55,6 +55,10 @@ class RawHtmlTagLib {
       def min = attrs.min.split('\\.')
       result += ',\nmin: new Date ('+min[2]+', '+(min[1].toInteger()-1)+', '+min[0]+')'
     }
+    if(attrs.depth){
+      result += ',\ndepth: "'+attrs.depth+'"'
+      result += ',\nstart: "'+attrs.depth+'"'
+    }
 
     result += '\n});\n</script>'
 

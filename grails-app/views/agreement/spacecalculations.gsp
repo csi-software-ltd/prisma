@@ -17,7 +17,7 @@
           <th>Номер счета<br/>Дата счета</th>
           <th>Сумма</th>
           <th>Доп услуги</th>
-          <th width="50"></th>
+          <th width="70"></th>
         </tr>
       </thead>
       <tbody>
@@ -33,6 +33,7 @@
           </td>
           <td>
             <a class="button" style="z-index:1" href="javascript:void(0)" title="Редактировать" onclick="$('spacecalculation_id').value=${record.id};$('spacecalculation_submit_button').click();"><i class="icon-pencil"></i></a>
+            <g:remoteLink class="button" url="${[controller:controllerName,action:'deletespacecalculation',id:record.id,params:[space_id:space.id]]}" title="Удалить" onSuccess="getCalcs()"><i class="icon-trash"></i></g:remoteLink>
           </td>
         </tr>
       </g:each>
@@ -43,6 +44,13 @@
           </td>
         </tr>
       </g:if>
+        <tr>
+          <td colspan="6" class="btns" style="text-align:center">
+            <a class="button" href="javascript:void(0)" onclick="$('spacecalculation_id').value=0;$('spacecalculation_submit_button').click();">
+              Добавить начисление &nbsp;<i class="icon-angle-right icon-large"></i>
+            </a>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>

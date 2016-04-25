@@ -69,6 +69,11 @@ class Agentratekreditplan {
     this
   }
 
+  Agentratekreditplan csiSetVrate(BigDecimal _vrate) {
+    vrate = _vrate?:1.0g
+    this
+  }
+
   Agentratekreditplan setDates(Date _start, Date _end) {
     if (is_last) {
       datestart = _start
@@ -101,13 +106,17 @@ class Agentratekreditplan {
       int monthcount = 0
       int daycount = 0
       int adddays = 0
+      int yearnum = startdate.get(Calendar.YEAR)
+      int dayOfYearCount = startdate.getActualMaximum(Calendar.DAY_OF_YEAR)
+      int adddaycount = 0
       if (akr.payterm){
           while(startdate.getTime()<=change.key) { adddays = startdate.getActualMaximum(Calendar.DAY_OF_MONTH); monthcount++; startdate.add(Calendar.DATE,adddays); }
           startdate.add(Calendar.DATE,-adddays)
           monthcount--
       }
-      while(startdate.getTime()<=change.key) { daycount++; startdate.add(Calendar.DATE,1); }
-      result += (initsum*monthcount*calcrate/1200+initsum*daycount*calcrate/36500)*vrate
+      while(startdate.getTime()<=change.key&&startdate.get(Calendar.YEAR)==yearnum) { daycount++; startdate.add(Calendar.DATE,1); }
+      while(startdate.getTime()<=change.key) { adddaycount++; startdate.add(Calendar.DATE,1); }
+      result += (initsum*monthcount*calcrate/1200+initsum*daycount*calcrate/(dayOfYearCount*100)+initsum*adddaycount*calcrate/(startdate.getActualMaximum(Calendar.DAY_OF_YEAR)*100))*vrate
       initsum += change.value.sum{it.summa}
     }
     summa = result
@@ -127,13 +136,17 @@ class Agentratekreditplan {
       int monthcount = 0
       int daycount = 0
       int adddays = 0
+      int yearnum = startdate.get(Calendar.YEAR)
+      int dayOfYearCount = startdate.getActualMaximum(Calendar.DAY_OF_YEAR)
+      int adddaycount = 0
       if (akr.payterm){
           while(startdate.getTime()<=change.key) { adddays = startdate.getActualMaximum(Calendar.DAY_OF_MONTH); monthcount++; startdate.add(Calendar.DATE,adddays); }
           startdate.add(Calendar.DATE,-adddays)
           monthcount--
       }
-      while(startdate.getTime()<=change.key) { daycount++; startdate.add(Calendar.DATE,1); }
-      result += (initsum*monthcount*calcrate/1200+initsum*daycount*calcrate/36500)*vrate
+      while(startdate.getTime()<=change.key&&startdate.get(Calendar.YEAR)==yearnum) { daycount++; startdate.add(Calendar.DATE,1); }
+      while(startdate.getTime()<=change.key) { adddaycount++; startdate.add(Calendar.DATE,1); }
+      result += (initsum*monthcount*calcrate/1200+initsum*daycount*calcrate/(dayOfYearCount*100)+initsum*adddaycount*calcrate/(startdate.getActualMaximum(Calendar.DAY_OF_YEAR)*100))*vrate
       initsum += change.value.sum{it.summa}
     }
     result - summa - clientdebt

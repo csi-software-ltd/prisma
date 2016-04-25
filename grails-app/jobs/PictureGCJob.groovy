@@ -7,7 +7,7 @@ class PictureGCJob {
 
   def execute() {
     log.debug("LOG>> PictureGCJob Start")
-    Picture.findAllByIdNotInList((Cashzakaz.findAllByFile_idGreaterThan(0).collect{it.file_id}?:[0l])+Cashreport.findAllByFile_idGreaterThan(0).collect{it.file_id}+Cash.findAllByReceiptGreaterThan(0).collect{it.receipt}+Cashdepartment.findAllByReceiptGreaterThan(0).collect{it.receipt}+Salaryreport.findAllByFileGreaterThan(0).collect{it.file}+License.findAllByFileGreaterThan(0).collect{it.file}+Payrequest.findAllByFile_idGreaterThan(0).collect{it.file_id}+Feedback.findAllByFile_idGreaterThan(0).collect{it.file_id}).unique().each{ it.delete(flush:true) }
+    Picture.findAllByIdNotInList((Cashzakaz.findAllByFile_idGreaterThan(0).collect{it.file_id}?:[0l])+Cashreport.findAllByFile_idGreaterThan(0).collect{it.file_id}+Cash.findAllByReceiptGreaterThan(0).collect{it.receipt}+Cashdepartment.findAllByReceiptGreaterThan(0).collect{it.receipt}+Salaryreport.findAllByFileGreaterThan(0).collect{it.file}+License.findAllByFileGreaterThan(0).collect{it.file}+Payrequest.findAllByFile_idGreaterThan(0).collect{it.file_id}+Feedback.findAllByFile_idGreaterThan(0).collect{it.file_id}+Feedback.findAllByExample_idGreaterThan(0).collect{it.example_id}).unique().each{ it.delete(flush:true) }
     log.debug("LOG>> PictureGCJob Finish")
   }
 

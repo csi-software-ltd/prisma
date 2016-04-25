@@ -142,19 +142,27 @@ class FeedbackController {
  
     hsRes+=requestService.getParams(['feedbacktype_id'],null,['qtext'])
 
+    def hsData
+    imageService.init(this)
+
     if(!hsRes.inrequest.qtext)
-      hsRes.result.errorcode<<1
+      hsRes.result.errorcode<<2
+    if(!hsRes.result.errorcode){
+      hsData = imageService.rawUpload('file',true)
+      if(hsData.error in [1,3])
+        hsRes.result.errorcode<<1
+    }
 
     if(!hsRes.result.errorcode){
       try {
-				new Feedback(user_id:hsRes.user.id,qtext:hsRes.inrequest.qtext.replace('\n','<br/>'),feedbacktype_id:hsRes.inrequest.feedbacktype_id).save(failOnError:true)
+				new Feedback(user_id:hsRes.user.id,qtext:hsRes.inrequest.qtext.replace('\n','<br/>'),feedbacktype_id:hsRes.inrequest.feedbacktype_id).csiSetExampleId(imageService.rawUpload('file').fileid).save(failOnError:true)
       } catch(Exception e) {
         log.debug("Error save data in Feedback/incertquestion\n"+e.toString())
         hsRes.result.errorcode << 100
       }
     }
-    render hsRes.result as JSON
-    return
+
+    return hsRes.result
   }
 
   def answerfilter = {
@@ -242,7 +250,7 @@ class FeedbackController {
       hsRes.result.errorcode<<2
     else if(!recieveSectionPermission(FSUPER)&&!hsRes.inrequest.qtext)
       hsRes.result.errorcode<<3
-    if(recieveSectionPermission(FSUPER)&&!hsRes.result.errorcode){
+    if(!hsRes.result.errorcode){
       hsData = imageService.rawUpload('file',true)
       if(hsData.error in [1,3])
         hsRes.result.errorcode<<1
@@ -250,7 +258,10 @@ class FeedbackController {
 
     if(!hsRes.result.errorcode){
       try {
-        hsRes.question.setData(hsRes.inrequest,recieveSectionPermission(FSUPER)).csiSetFileId(imageService.rawUpload('file').fileid).computeStatus().save(failOnError:true)
+        hsRes.question.setData(hsRes.inrequest,recieveSectionPermission(FSUPER))
+                      .csiSetFileId(recieveSectionPermission(FSUPER)?imageService.rawUpload('file').fileid:0)
+                      .csiSetExampleId(recieveSectionPermission(FSUPER)?0:imageService.rawUpload('file').fileid)
+                      .computeStatus().save(failOnError:true)
       } catch(Exception e) {
         log.debug("Error save data in Feedback/updatequestion\n"+e.toString())
         hsRes.result.errorcode << 100

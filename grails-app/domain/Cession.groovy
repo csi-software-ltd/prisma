@@ -29,6 +29,7 @@ class Cession {
   BigDecimal summa
   Integer valuta_id
   Integer agr_id
+  Integer client_id = 0
   Integer is_dirsalary = 1
   Long responsible
   BigDecimal maindebt
@@ -41,12 +42,13 @@ class Cession {
 
   def afterInsert(){
     new Cessionhist(cession_id:id,admin_id:admin_id,dopagrcomment:dopagrcomment).setData(properties).save(failOnError:true)
-    if (cessionvariant==1) Kredit.get(agr_id)?.csiSetCessionstatus(id)?.csiSetCreditor(cessiontype==2?cessionary:0)?.csiSetCbank(cessiontype==2?cbank_id:'')?.save(failOnError:true)
+    if (cessionvariant==1) Kredit.get(agr_id)?.csiSetCessionstatus(id)?.csiSetCreditor(cessiontype==2?cessionary:0)?.csiSetCbank(cessiontype==2?cbank_id:'')?.csiSetCurclient(client_id,adate)?.save(failOnError:true)
     else if (cessionvariant==2) Lizing.get(agr_id)?.csiSetCessionstatus(id)?.csiSetCreditor(cessiontype==2?cessionary:0)?.csiSetCbank(cessiontype==2?cbank_id:'')?.save(failOnError:true)
   }
 
   def beforeUpdate(){
     if(isHaveDirty()) new Cessionhist(cession_id:id,admin_id:admin_id,dopagrcomment:dopagrcomment).setData(properties).save(failOnError:true)
+    if(cessionvariant==1&&isDirty('adate')){ def _cdate = getPersistentValue('adate'); Agentperiod.withNewSession{ Agentperiod.findByKredit_idAndStartdate(agr_id,_cdate)?.csiSetStartdate(adate)?.save(flush:true); Agentperiod.findByKredit_idAndEnddate(agr_id,_cdate-1)?.csiSetEnddate(adate-1)?.save(flush:true) }}
   }
 
   String toString(){
@@ -85,6 +87,11 @@ class Cession {
     summa = maindebt + procdebt
     is_debtfull = _request.is_debtfull?:0
     procdebtperiod = _request.procdebtperiod?:''
+    this
+  }
+
+  Cession csiSetClient_id(iClientId){
+    client_id = cessionvariant==2||iClientId==-1 ? 0 : iClientId ?: client_id
     this
   }
 

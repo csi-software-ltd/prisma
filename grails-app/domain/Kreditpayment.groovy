@@ -49,7 +49,7 @@ class Kreditpayment {
   }
 
   Kreditpayment fillfromPayrequest(Payrequest _request, bdRate, bdSumma){
-    summarub = summarub?:bdSumma?:0
+    summarub = summarub?summarub+bdSumma:bdSumma?:0
     summapercrub = summapercrub?:0
     summa = summarub/bdRate
     summaperc = summapercrub/bdRate
@@ -61,7 +61,7 @@ class Kreditpayment {
 
   Kreditpayment fillfromPayrequestDop(Payrequest _request, bdRate, bdSumma){
     summarub = summarub?:0
-    summapercrub = summapercrub?:bdSumma?:0
+    summapercrub = summapercrub?summapercrub+bdSumma:bdSumma?:0
     summa = summarub/bdRate
     summaperc = summapercrub/bdRate
     rate = bdRate?:1g

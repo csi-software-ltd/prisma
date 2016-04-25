@@ -42,12 +42,12 @@ class Bankaccount {
   String smstel = ''
   String dopoffice = ''
   Integer bankclient_id = 0
-  Integer saldo = 0
-  Integer actsaldo = 0
+  BigDecimal saldo = 0.0g
+  BigDecimal actsaldo = 0.0g
   Date saldodate
   Date actsaldodate
   Date actmoddate
-  Long banksaldo = 0
+  BigDecimal banksaldo = 0.0g
   Date banksaldodate
 
   def beforeInsert(){
@@ -56,6 +56,22 @@ class Bankaccount {
 
   def beforeUpdate(){
     is_bkactproc = ibankstatus==1?0:is_bkactproc
+  }
+
+  def afterInsert(){
+    Space.withNewSession{
+      Space.findAllByArendatorOrArendodatel(company_id,company_id).each{
+        it.computePaystatus().save(flush:true)
+      }
+    }
+  }
+
+  def afterUpdate(){
+    Space.withNewSession{
+      Space.findAllByArendatorOrArendodatel(company_id,company_id).each{
+        it.computePaystatus().save(flush:true)
+      }
+    }
   }
 
   String toString(){

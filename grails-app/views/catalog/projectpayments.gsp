@@ -12,7 +12,7 @@
         </tr>
       </thead>
       <tbody>
-      <g:each in="${payments}" status="i" var="record">
+      <g:each in="${payments.records}" status="i" var="record">
         <tr align="center">
           <td>${String.format('%td.%<tm.%<tY',record.paydate)}<br/><g:link controller="payment" action="payrequestdetail" id="${record.id}" target="_blank">${record.id}</g:link></td>
           <td>

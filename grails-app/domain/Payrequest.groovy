@@ -99,12 +99,13 @@ class Payrequest {
   Integer car_id = 0
   Integer agrpayment_id = 0
   Integer is_third = 0
+  Integer is_payconfirm = 0
   Integer related_id = 0
 
 ////////////////////////////////////////////////////////////
   def beforeInsert(){
     if (!project_id) project_id = Project.findByIs_main(1)?.id?:0
-    clientdelta = is_bankmoney ? 0.0g : summa - (paytype in [3,4,6]?summa:(clientcommission+agentcommission)) - (paytype in [1,3]?-comission:comission) - (paytype in [1,3]?-midcomission:midcomission)
+    clientdelta = is_bankmoney ? 0.0g : summa - (paytype in [3,4,6]?summa:(clientcommission+agentcommission)) - (paytype in [1,3,11]?-comission:comission) - (paytype in [1,3,11]?-midcomission:midcomission)
     platperiod = platperiod?:String.format('%tm.%<tY',paydate)
     instatus = instatus?:paytype in [2,11]?1:0
     paygroup = (paycat==Payrequest.PAY_CAT_PERS||paycat==Payrequest.PAY_CAT_BUDG)?1:(client_id>0||agreementtype_id==3)?2:(paycat==Payrequest.PAY_CAT_AGR&&agreementtype_id==2)?3:4
@@ -141,7 +142,7 @@ class Payrequest {
   def beforeDelete(){
     if(modstatus>1) Payrequest.withNewSession{ paymentService.undoRequest(this) }
     if(paytype==10) Payrequest.withNewSession{ Payrequest.findAllByRelated_id(id).each{ it.csiSetRelated(0).save(flush:true) } }
-    if (paytype==2&&agreementtype_id==3&&Kredit.get(agreement_id)?.kredtype==2){
+    if (paytype==2&&agreementtype_id==3&&Kredit.get(agreement_id)?.kredtype in [2,4]){
       Kreditline.withNewSession { Kreditline.findByKredit_idAndPaydateAndSummarub(agreement_id,paydate,summa)?.delete(flush:true) }
     }
     if (agreementtype_id==13&&agreement_id>0&&paytype in [1,2]){
@@ -160,7 +161,7 @@ class Payrequest {
     if(isDirty('modstatus')&&getPersistentValue('modstatus')!=3&&modstatus==2) Payrequest.withNewSession{ paymentService.doRequest(this) }
     if(isDirty('modstatus')&&getPersistentValue('modstatus')==2&&(modstatus==1||modstatus==0)) Payrequest.withNewSession{ paymentService.undoRequest(this) }
     if(isDirty('summa')&&modstatus>=2&&is_generate==1) Payrequest.withNewSession{ paymentService.undoRequest(this); paymentService.doRequest(this); }
-    clientdelta = is_bankmoney ? 0.0g : summa - (paytype in [3,4,6]?summa:(clientcommission+agentcommission)) - (paytype in [1,3]?-comission:comission) - (paytype in [1,3]?-midcomission:midcomission)
+    clientdelta = is_bankmoney ? 0.0g : summa - (paytype in [3,4,6]?summa:(clientcommission+agentcommission)) - (paytype in [1,3,11]?-comission:comission) - (paytype in [1,3,11]?-midcomission:midcomission)
     paygroup = (paycat==Payrequest.PAY_CAT_PERS||paycat==Payrequest.PAY_CAT_BUDG)?1:(client_id>0||agreementtype_id==3)?2:(paycat==Payrequest.PAY_CAT_AGR&&agreementtype_id==2)?3:4
     changeDCSaldo()
     //////////lizing>>>
@@ -199,7 +200,7 @@ class Payrequest {
     ///////indeposit<<<
   }
  ////////////////////////////////////////////////////////////
-  def csiSelectPayrequest(hsInrequest,iMax,iOffset){
+  def csiSelectPayrequest(hsInrequest,iMax,iOffset,iVision=0){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsInt=[:]
     def hsString=[:]
@@ -218,8 +219,10 @@ class Payrequest {
       ((hsInrequest?.is_noclient)?' AND client_id=0':'')+
       ((hsInrequest?.is_noinner)?' AND paytype!=3':'')+
       ((hsInrequest?.is_notag)?' AND expensetype_id=0':'')+
+      ((hsInrequest?.is_payconfirm)?' AND is_payconfirm=1':'')+
       (hsInrequest?.project_id>0?' AND project_id=:project_id':'')+
-      ((hsInrequest?.platperiod_year)?((hsInrequest?.platperiod_month)?' AND platperiod=:platperiod':' AND platperiod like concat("%.",:platperiod,"%")'):'')
+      ((hsInrequest?.platperiod_year)?((hsInrequest?.platperiod_month)?' AND platperiod=:platperiod':' AND platperiod like concat("%.",:platperiod,"%")'):'')+
+      (iVision>0?' and ((fromcompany_id=0 and tocompany_id=0) or IFNULL((select visualgroup_id from company where company.id=payrequest.fromcompany_id and is_holding=1),0)=:visualgroup_id or IFNULL((select visualgroup_id from company where company.id=payrequest.tocompany_id and is_holding=1),0)=:visualgroup_id)':'')
     hsSql.order="paydate desc, id desc"
 
     if(hsInrequest?.pid>0)
@@ -245,6 +248,8 @@ class Payrequest {
         hsString['platperiod'] = String.format('%tm.%<tY',new Date(hsInrequest?.platperiod_year-1900,hsInrequest?.platperiod_month-1,1))
       else
         hsString['platperiod'] = String.format('%tY',new Date(hsInrequest?.platperiod_year-1900,1,1))
+    if(iVision>0)
+      hsInt['visualgroup_id'] = iVision
 
     searchService.fetchDataByPages(hsSql,null,null,hsInt,hsString,null,null,iMax,iOffset,'id',true,Payrequest.class)
   }
@@ -263,21 +268,22 @@ class Payrequest {
     searchService.fetchData(hsSql,hsLong,null,null,null,Payrequest.class)
   }
 
-  def csiSelectRepayments(iClientId,iAgentagrId){
+  def csiSelectRepayments(iClientId,iSubClientId,iAgentagrId){
     def hsSql = [select:'',from:'',where:'',order:'']
     def hsLong = [:]
 
     hsSql.select="*"
     hsSql.from="payrequest"
-    hsSql.where="agent_id=0 and client_id=:client_id and paytype=4 and modstatus>=0"+
+    hsSql.where="agent_id=0 and client_id=:client_id and subclient_id=:subclient_id and paytype=4 and modstatus>=0"+
       ((iAgentagrId>0)?' AND agentagr_id=:agentagr_id':'')
     hsSql.order="modstatus asc, inputdate desc"
 
     hsLong['client_id'] = iClientId
+    hsLong['subclient_id'] = iSubClientId
     if(iAgentagrId>0)
       hsLong['agentagr_id'] = iAgentagrId
 
-    searchService.fetchData(hsSql,hsLong,null,null,null,Payrequest.class,10)
+    searchService.fetchData(hsSql,hsLong,null,null,null,Payrequest.class)
   }
 
   def csiSelectAgentpayments(iClientId){
@@ -314,6 +320,7 @@ class Payrequest {
   Payrequest csiSetModstatus(iStatus){
     modstatus = iStatus
     if (modstatus==2) {
+      if(is_payconfirm) modstatus = 3
       csiSetExecdate(new Date())
       instatus = 1
     } else if (modstatus==1||modstatus==0){
@@ -684,7 +691,7 @@ class Payrequest {
     if (agreementtype_id==3&&!is_fine){
       if (paytype==1&&!is_dop) agrpayment_id = Kreditpayment.findOrCreateByKredit_idAndPaydate(oKredit.id,paydate).fillfromPayrequest(this,oKredit.getvRate(),summa).csiSetAdmin(initiator).updatepaiddata(summa,2,is_dop,paydate).computeModstatus().save()?.id?:0
       else if (paytype==1&&is_dop) agrpayment_id = Kreditpayment.findOrCreateByKredit_idAndPaydate(oKredit.id,paydate).fillfromPayrequestDop(this,oKredit.getvRate(),summa).csiSetAdmin(initiator).updatepaiddata(summa,2,is_dop,paydate).computeModstatus().save()?.id?:0
-      else if (paytype==2&&oKredit.kredtype==2&&!is_dop) Kreditline.findOrCreateByKredit_idAndPaydateAndSummarubAndModstatus(oKredit.id,paydate,summa,0).fillfromPayrequest(this,oKredit.getvRate()).csiSetAdmin(initiator).csiSetModstatus(1).save()
+      else if (paytype==2&&oKredit.kredtype in [2,4]&&!is_dop) Kreditline.findOrCreateByKredit_idAndPaydateAndSummarubAndModstatus(oKredit.id,paydate,summa,0).fillfromPayrequest(this,oKredit.getvRate()).csiSetAdmin(initiator).csiSetModstatus(1).save()
       else if (paytype==2&&oKredit.kredtype==1&&!is_dop) oKredit.csiSetStartdate(paydate).save()
     }
     this
@@ -761,6 +768,11 @@ class Payrequest {
 
   Payrequest csiSetDop(){
     is_dop = 1
+    this
+  }
+
+  Payrequest csiSetPayconfirm(iConfirm){
+    is_payconfirm = iConfirm?:0
     this
   }
 

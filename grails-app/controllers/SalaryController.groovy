@@ -655,7 +655,7 @@ class SalaryController {
       return
     }
 
-    hsRes+=requestService.getParams(null,null,null,null,['fullsalary','debtsalary','ndfl','debtndfl','fss_tempinvalid',
+    hsRes+=requestService.getParams(null,null,null,null,['fullsalary','netsalary','debtsalary','ndfl','debtndfl','fss_tempinvalid',
                                     'debtfss_tempinvalid','fss_accident','debtfss_accident','ffoms','debtffoms','pf','debtpf'])
 
     if(hsRes.inrequest.fullsalary&&hsRes.inrequest.fullsalary<0)
@@ -663,6 +663,8 @@ class SalaryController {
     if(hsRes.scomp.is_pers){
       if(hsRes.inrequest.debtsalary&&hsRes.inrequest.debtsalary<0)
         hsRes.result.errorcode<<2
+      if(hsRes.inrequest.netsalary&&hsRes.inrequest.netsalary<0)
+        hsRes.result.errorcode<<13
     } else {
       if(hsRes.inrequest.ndfl&&hsRes.inrequest.ndfl<0)
         hsRes.result.errorcode<<3

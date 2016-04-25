@@ -20,7 +20,7 @@ class FinlizingSearch {
   String flpoluchatel_name
   String bankcompany_name
 
-  def csiSelectFLizings(hsRequest,iMax,iOffset){
+  def csiSelectFLizings(hsRequest,iVision,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -30,7 +30,8 @@ class FinlizingSearch {
     hsSql.where="finlizing.fldatel=c1.id and finlizing.flpoluchatel=c2.id and finlizing.flbank=c3.id"+
                 (hsRequest?.flid>0?' and finlizing.id=:flid':'')+
                 (hsRequest?.modstatus>-100?' and finlizing.modstatus=:status':'')+
-                (hsRequest?.company_name?' and c2.name like concat("%",:company_name,"%")':'')
+                (hsRequest?.company_name?' and c2.name like concat("%",:company_name,"%")':'')+
+                (iVision>0?' and (if(c1.is_holding=0,0,c1.visualgroup_id)=:visualgroup_id or if(c2.is_holding=0,0,c2.visualgroup_id)=:visualgroup_id)':'')
     hsSql.order="finlizing.id desc"
 
     if(hsRequest?.flid>0)
@@ -39,6 +40,8 @@ class FinlizingSearch {
       hsLong['status'] = hsRequest.modstatus
     if(hsRequest?.company_name)
       hsString['company_name'] = hsRequest.company_name
+    if(iVision>0)
+      hsLong['visualgroup_id'] = iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,null,null,iMax,iOffset,'finlizing.id',true,FinlizingSearch.class)
   }

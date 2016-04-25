@@ -81,7 +81,7 @@ class CashSearch {
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,null,null,iMax,iOffset,'cash.id',true,CashSearch.class)
   }
 
-  def csiSelectDCReturn(dDate,iMax,iOffset){
+  def csiSelectDCReturn(dDate,iMax,iOffset,iYear=0,iMonth=0){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -89,13 +89,19 @@ class CashSearch {
     hsSql.select="*, '' as admin_name, '' as pers_name, '' as pers_fio"
     hsSql.from='cash'
     hsSql.where="cash.type=3 and cash.cashclass=8"+
-                ((dDate)?' AND year(cash.platperiod) =:year AND month(cash.platperiod) =:month':'')
+                (dDate?' AND year(cash.platperiod) =:year AND month(cash.platperiod) =:month':'')+
+                (iYear>0?' AND year(cash.platperiod) =:year':'')+
+                (iMonth>0?' AND month(cash.platperiod) =:month':'')
     hsSql.order="cash.operationdate desc"
 
     if(dDate){
       hsLong['month'] = dDate.getMonth()+1
       hsLong['year'] = dDate.getYear()+1900
     }
+    if(iYear>0)
+      hsLong['year'] = iYear
+    if(iMonth>0)
+      hsLong['month'] = iMonth
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,null,null,null,iMax,iOffset,'cash.id',true,CashSearch.class)
   }

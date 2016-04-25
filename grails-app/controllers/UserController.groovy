@@ -1247,7 +1247,7 @@ class UserController {
                                             'is_prolongwork','is_cgroup','is_positionedit','is_rep_service','is_rep_cash',
                                             'is_rep_booh','is_deposit','is_depositedit','is_finlizing','is_finlizingedit',
                                             'is_salarynal','is_salarynaledit','is_clientpaynew','is_visualgroup',
-                                            'is_department','is_rep_payment'])
+                                            'is_department','is_rep_payment','is_payconfirm'])
     if (hParams.inrequest.id>0){
       def oUsergroup = Usergroup.get(hParams.inrequest.id)
       if(oUsergroup.is_superuser)
@@ -1301,6 +1301,8 @@ class UserController {
         else oUsergroup.is_payedit = 0
         if (hParams.inrequest.is_payment&&hParams.inrequest.is_paytag) oUsergroup.is_paytag = 1
         else oUsergroup.is_paytag = 0
+        if (hParams.inrequest.is_payment&&hParams.inrequest.is_payconfirm) oUsergroup.is_payconfirm = 1
+        else oUsergroup.is_payconfirm = 0
         if (hParams.inrequest.is_payment&&hParams.inrequest.is_payordering) oUsergroup.is_payordering = 1
         else oUsergroup.is_payordering = 0
         if (hParams.inrequest.is_payment&&hParams.inrequest.is_paysaldo) oUsergroup.is_paysaldo = 1

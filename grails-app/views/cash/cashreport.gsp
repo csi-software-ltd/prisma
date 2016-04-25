@@ -126,7 +126,7 @@
       <g:if test="${session.user.cashaccess==2&&cashreport.modstatus in 0..1}">
         <input type="button" class="spacing" value="Отказать" onclick="submitForm(-1)"/>
       </g:if>
-      <g:if test="${session.user.cashaccess==3&&(cashreport.modstatus in 0..1||(cashreport.modstatus==2&&cashreport.isThisMonth()))}">
+      <g:if test="${session.user.cashaccess==3&&cashreport.modstatus in 0..2}">
         <input type="button" class="spacing" value="Отказать" onclick="submitForm(-2)"/>
       </g:if>
       <g:if test="${session.user.cashaccess==3&&cashreport.modstatus in 0..1}">

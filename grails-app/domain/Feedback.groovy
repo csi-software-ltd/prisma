@@ -13,6 +13,7 @@ class Feedback {
   String atext = ''
   String fullstory = ''
   Long file_id = 0
+  Long example_id = 0
   Integer modstatus = 0
   Integer is_readanswer = 0
 
@@ -39,6 +40,11 @@ class Feedback {
 
   Feedback csiSetFileId(iFileId){
     file_id = iFileId?:file_id
+    this
+  }
+
+  Feedback csiSetExampleId(iFileId){
+    example_id = iFileId?:example_id
     this
   }
 

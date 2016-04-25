@@ -28,12 +28,12 @@ class BankaccountSearch {
   Integer is_nosms
   String smstel
   String dopoffice
-  Integer saldo
-  Integer actsaldo
+  BigDecimal saldo
+  BigDecimal actsaldo
   Date saldodate
   Date actsaldodate
   Date actmoddate
-  Long banksaldo
+  BigDecimal banksaldo
   Date banksaldodate
 /////Bank////////////
   String bankname

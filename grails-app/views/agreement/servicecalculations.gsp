@@ -16,7 +16,7 @@
           <th>Дата расчета</th>
           <th>Номер счета<br/>Дата счета</th>
           <th>Сумма</th>
-          <th width="50"></th>
+          <th width="70"></th>
         </tr>
       </thead>
       <tbody>
@@ -27,7 +27,8 @@
           <td>${record.schet?:'нет'}<g:if test="${record.schetdate}"><br/>${String.format('%td.%<tm.%<tY',record.schetdate)}</g:if></td>
           <td>${number(value:record.summa)}</td>
           <td>
-            <a class="button" style="z-index:1" href="javascript:void(0)" title="Редактировать" onclick="$('servicecalculation_id').value=${record.id};$('servicecalculation_submit_button').click();"><i class="icon-pencil"></i></a>
+            <a class="button" style="z-index:1" href="javascript:void(0)" title="Редактировать" onclick="$('servicecalculation_id').value=${record.id};$('servicecalculation_submit_button').click();"><i class="icon-pencil"></i></a>&nbsp;
+            <g:remoteLink class="button" url="${[controller:controllerName,action:'deleteservicecalculation',id:record.id,params:[service_id:service.id]]}" title="Удалить" onSuccess="getCalcs()"><i class="icon-trash"></i></g:remoteLink>
           </td>
         </tr>
       </g:each>
@@ -38,6 +39,13 @@
           </td>
         </tr>
       </g:if>
+        <tr>
+          <td colspan="6" class="btns" style="text-align:center">
+            <a class="button" href="javascript:void(0)" onclick="$('servicecalculation_id').value=0;$('servicecalculation_submit_button').click();">
+              Добавить начисление &nbsp;<i class="icon-angle-right icon-large"></i>
+            </a>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>

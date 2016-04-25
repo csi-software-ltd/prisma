@@ -25,7 +25,7 @@
   <label class="auto" for="paytype">Тип платежа</label>
   <g:select class="mini" name="paytype" value="${inrequest?.paytype}" from="${Paytype.list()}" optionKey="id" optionValue="name" noSelection="${['-100':'все']}"/>
   <label class="auto" for="platperiod_month">Период</label>
-  <g:datePicker class="auto" name="platperiod" precision="month" value="${inrequest?.platperiod_month&&inrequest?.platperiod_year?new Date(inrequest.platperiod_year-1900,inrequest.platperiod_month-1,1):new Date()}" relativeYears="[114-new Date().getYear()..0]" noSelection="${['':'все']}"/>
+  <g:datePicker class="auto" name="platperiod" precision="month" value="${inrequest?.platperiod_month&&inrequest?.platperiod_year?new Date(inrequest.platperiod_year-1900,inrequest.platperiod_month-1,1):inrequest?.platperiod_year?new Date(inrequest.platperiod_year-1900,0,1):new Date()}" relativeYears="[114-new Date().getYear()..0]" noSelection="${['':'все']}"/>
   <label class="auto" for="is_noclient">
     <input type="checkbox" id="is_noclient" name="is_noclient" value="1" <g:if test="${inrequest?.is_noclient!=0}">checked</g:if> />
     Без клиентских
@@ -34,16 +34,22 @@
     <input type="checkbox" id="is_noinner" name="is_noinner" value="1" <g:if test="${inrequest?.is_noinner!=0}">checked</g:if> />
     Без внутренних
   </label>
-  <label class="auto" for="instatus">Статус получения:</label>
+  <label class="auto" for="instatus">Получение</label>
   <g:select class="mini" name="instatus" value="${inrequest?.instatus}" from="['отклонен', 'новый', 'в полете', 'получен', 'подтвержден']" keys="${-1..3}" noSelection="${['-100':'все']}"/>
-  <label class="auto" for="pid">Код:</label>
+  <label class="auto" for="pid">Код</label>
   <input type="text" class="mini" id="pid" name="pid" value="${inrequest?.pid?:''}"/>
-  <label class="auto" for="project_id">Проект:</label>
+  <label class="auto" for="project_id">Проект</label>
   <g:select class="mini" name="project_id" value="${inrequest?.project_id?:0}" from="${Project.list()}" optionValue="name" optionKey="id" noSelection="${['0':'все']}"/>
-  <label class="auto" for="is_notag">
+  <label class="auto" style="margin-right:0" for="is_notag">
     <input type="checkbox" id="is_notag" name="is_notag" value="1" <g:if test="${inrequest?.is_notag}">checked</g:if> />
     Не тегирован
   </label>
+<g:if test="${iscanconfirm}">
+  <label for="is_payconfirm" class="auto" style="margin-right:0">
+    <input type="checkbox" id="is_payconfirm" name="is_payconfirm" value="1" <g:if test="${inrequest?.is_payconfirm}">checked</g:if> />
+    Без выписки
+  </label>
+</g:if>
   <div class="fright">
     <input type="button" class="reset spacing" value="Сброс" onclick="resetPayrequestFilter()"/>
     <input type="button" id="form_submit_button_logic" value="Показать" onclick="submitPayrequestLogic()"/>

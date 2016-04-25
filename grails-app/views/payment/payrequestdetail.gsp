@@ -126,8 +126,14 @@
         <label for="is_nds" class="auto" disabled>
           <input type="checkbox" id="is_nds" value="1" readonly <g:if test="${payrequest?.is_nds}">checked</g:if> />
           Наличие НДС
-        </label><br />
-        <label for="client" disabled>Клиент:</label>
+        </label>
+      <g:if test="${iscanconfirm}">
+        <label for="is_payconfirm" class="auto">
+          <input type="checkbox" id="is_payconfirm" name="is_payconfirm" value="1" <g:if test="${payrequest?.is_payconfirm}">checked</g:if> />
+          Без выписки
+        </label>
+      </g:if>
+        <br/><label for="client" disabled>Клиент:</label>
         <input type="text" id="client" disabled value="${client?.name?:'нет'}"/>
         <label for="agent" disabled>Агент:</label>
         <input type="text" id="agent" disabled value="${agent?.name?:'нет'}"/>
@@ -242,17 +248,11 @@
         <g:if test="${payrequest.instatus==2}">
           <g:remoteLink class="button" url="${[controller:'payment',action:'cancelreceiveprincome',id:payrequest.id]}" onSuccess="location.reload(true)">Отменить получение</g:remoteLink>
         </g:if>
-        <g:if test="${iscansetrefill}">
-          <g:remoteLink class="button" url="${[controller:'payment',action:'payrequestsetrefill',id:payrequest.id]}" onSuccess="location.reload(true)">Выполнить за счет клиента</g:remoteLink>
-        </g:if>
         <g:if test="${iscandecline}">
           <g:remoteLink class="button" url="${[controller:'payment',action:'payrequestdecline',id:payrequest.id]}" onSuccess="location.reload(true)">Отклонить</g:remoteLink>
         </g:if>
         <g:if test="${iscanrestore}">
           <g:remoteLink class="button" url="${[controller:'payment',action:'payrequestrestore',id:payrequest.id]}" onSuccess="location.reload(true)">Восстановить</g:remoteLink>
-        </g:if>
-        <g:if test="${payrequest.paytype==5&&!payrequest.client_id}">
-          <g:remoteLink class="button" url="${[controller:'payment',action:'cancellrefill',id:payrequest.id]}" onSuccess="location.reload(true)">Выполнить за счет СС</g:remoteLink>
         </g:if>
         <g:if test="${payrequest.modstatus==0&&payrequest.taskpay_id==0&&payrequest.paytype in [1,3]}">
           <input type="button" class="button" value="В оплату" onclick="$('is_task').value=1;$('submit_button').click();"/>

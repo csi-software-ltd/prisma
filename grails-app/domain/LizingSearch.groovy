@@ -40,7 +40,7 @@ class LizingSearch {
     "$arendator_name - $arendodatel_name - $anumber от ${String.format('%td.%<tm.%<tY',adate)}"
   }
 
-  def csiSelectLizings(iId,sCompanyName,lResponsible,iDebt,iLizsort,iStatus,iProjectId,iCarId,iCession,iMax,iOffset){
+  def csiSelectLizings(iId,sCompanyName,lResponsible,iDebt,iLizsort,iStatus,iProjectId,iCarId,iCession,iVision,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -56,7 +56,8 @@ class LizingSearch {
                 (iStatus>-100?' and lizing.modstatus=:modstatus':'')+
                 (iProjectId>0?' and lizing.project_id=:project_id':'')+
                 (iCarId>0?' and lizing.car_id=:car_id':'')+
-                (iCession>0?' and lizing.cessionstatus>0':'')
+                (iCession>0?' and lizing.cessionstatus>0':'')+
+                (iVision>0?' and (IFNULL(c3.visualgroup_id,c1.visualgroup_id)=:visualgroup_id or if(c2.is_holding=0,0,c2.visualgroup_id)=:visualgroup_id)':'')
     hsSql.order="lizing.adate desc"
 
     if(iId>0)
@@ -73,6 +74,8 @@ class LizingSearch {
       hsLong['project_id'] = iProjectId
     if(iCarId>0)
       hsLong['car_id'] = iCarId
+    if(iVision>0)
+      hsLong['visualgroup_id']=iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,null,null,iMax,iOffset,'lizing.id',true,LizingSearch.class)
   }

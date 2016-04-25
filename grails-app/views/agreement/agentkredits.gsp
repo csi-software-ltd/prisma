@@ -27,7 +27,7 @@
         <tr align="center">
           <td>${record.client_name}<br/>${record.bank_name}</td>
           <td>${number(value:record.kr_summa)}<i class="icon-${valutas[record.valuta_id]}"></i><br/>${record.lastbodydebt>=0?number(value:record.lastbodydebt):'нет данных'}</td>
-          <td>${String.format('%td.%<tm.%<tY',record.adate)}<br/>${String.format('%td.%<tm.%<tY',record.enddate)}</td>
+          <td>${String.format('%td.%<tm.%<tY',record.period_start)}<br/>${String.format('%td.%<tm.%<tY',record.period_end)}</td>
           <td>${number(value:record.rate)}<br/>${number(value:record.rate-(record.agentpercent?:0))}</td>
           <td>${record.calcdate?String.format('%td.%<tm.%<tY',record.calcdate):'нет'}</td>
           <td>${record.payterm?'по месяцам':'по дням'}</td>

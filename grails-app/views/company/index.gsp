@@ -15,17 +15,29 @@
           link.href,
           { evalScripts: true });
       }
+      function setPage(iHolding,iInActive){
+        if(iInActive) setInactive(iInActive)
+        else setHolding(iHolding)
+      }
       function setHolding(iStatus){
         $('is_holding').value=iStatus%2;
+        $('is_inactive').value=0;
         jQuery('.tabs a[class="active"]').removeClass('active');
         $('holding'+iStatus%2).addClassName('active');
+        $('form_submit_button').click();
+      }
+      function setInactive(iStatus){
+        $('is_holding').value=1;
+        $('is_inactive').value=1;
+        jQuery('.tabs a[class="active"]').removeClass('active');
+        $('inactive').addClassName('active');
         $('form_submit_button').click();
       }
       new Autocomplete('okved', {
         serviceUrl:'${resource(dir:"autocomplete",file:"okved_autocomplete")}'
       });
       new Autocomplete('cname', {
-        serviceUrl:'${resource(dir:"autocomplete",file:"companyname_autocomplete")}'
+        serviceUrl:'${resource(dir:"autocomplete",file:"space_arendodatel_autocomplete")}'
       });
       new Autocomplete('bankname', {
         serviceUrl:'${resource(dir:"autocomplete",file:"bankname_autocomplete")}'
@@ -49,6 +61,8 @@
         $('responsible').selectedIndex=0;
         $('color').selectedIndex=0;
         $('colorfill').selectedIndex=0;
+        $('cgroup_id').selectedIndex=0;
+        if ($('visualgroup_id')) $('visualgroup_id').selectedIndex=0;
         $('is_license').checked=false;
       }
       function setColor(iId,sColor){        
@@ -74,23 +88,21 @@
       }      
     </g:javascript>
   </head>
-  <body onload="setHolding(${inrequest?.is_holding?:0})">
+  <body onload="setPage(${inrequest?.is_holding?:0},${inrequest?.is_inactive?:0})">
     <g:formRemote name="allForm" url="[controller:'company',action:'list']" update="list">
       <div class="tabs padtop fright">
         <a id="holding1" onclick="setHolding(1)"><i class="icon-list icon-large"></i> Холдинг </a>
         <a id="holding0" onclick="setHolding(0)"><i class="icon-list icon-large"></i> Внешние </a>
+        <a id="inactive" onclick="setInactive(1)"><i class="icon-list icon-large"></i> Архив </a>
       </div>
       <div class="clear"></div>
       <div class="padtop filter">
-        <label class="auto" for="cname">Название:</label>
-        <input type="text" id="cname" name="cname" value="${inrequest?.cname?:''}" />
-        <div id="companyname_autocomplete" class="autocomplete" style="display:none"></div>
+        <label class="auto" for="cname">Название/ИНН:</label>
+        <input type="text" id="cname" style="width:187px" name="cname" value="${inrequest?.cname?:''}" />
         <label class="auto" for="bankname">Банк:</label>
         <input type="text" id="bankname" name="bankname" value="${inrequest?.bankname?:''}" />
-        <div id="bankname_autocomplete" class="autocomplete" style="display:none"></div>
         <label class="auto" for="okved">ОКВЭД:</label>
         <input type="text" id="okved" name="okved" value="${inrequest?.okved?:''}" style="width:117px" />
-        <div id="okved_autocomplete" class="autocomplete" style="display:none"></div>
         <hr class="admin fleft" style="width:650px;" /><a id="expandlink" style="text-decoration:none" href="javascript:void(0)" onclick="toggleaddition()">&nbsp;&nbsp;Развернуть&nbsp;<i class="icon-collapse"></i></a><hr class="admin fright" style="width:180px;" />
         <div id="addition" style="display:none;clear:both;">  
           <label class="auto" for="project_id">Проект:</label>
@@ -99,12 +111,10 @@
           <g:select class="mini" name="bankaccount" value="${inrequest?.bankaccount}" from="['Да','Нет']" keys="[1,0]" noSelection="${['-100':'все']}"/>
           <label class="auto" for="gd">Ген. директор:</label>
           <input type="text" id="gd" name="gd" value="${inrequest?.gd?:''}" />
-          <div id="gd_autocomplete" class="autocomplete" style="display:none"></div>
           <label class="auto" for="responsible">Исполнитель:</label>
           <g:select class="mini" name="responsible" value="${inrequest?.responsible?:0}" from="${responsiblies}" optionValue="name" optionKey="id" noSelection="${['0':'все']}"/>
           <label class="auto" for="district">Район налоговой:</label>
           <input type="text" id="district" name="district" value="${inrequest?.district?:''}" />
-          <div id="district_autocomplete" class="autocomplete" style="display:none"></div>
           <label class="auto" for="is_license">
             <input type="checkbox" id="is_license" name="is_license" value="1" <g:if test="${inrequest?.is_license}">checked</g:if> />
             Активные лицензии
@@ -125,8 +135,14 @@
               filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='${it.code}', endColorstr='#fff', GradientType=1);" <g:if test="${it.code==inrequest?.color}">selected="selected"</g:if>>${it.name}</option>
           </g:each>
           </select>
-          <label class="auto" for="colorfill">Заполнение</label>            
+          <label class="auto" for="colorfill">Заполнение</label>
           <g:select class="mini" name="colorfill" value="${inrequest?.colorfill}" from="['да','нет']" keys="[1,0]" noSelection="${['-100':'все']}"/>
+          <label class="auto" for="cgroup_id">Группа</label>
+          <g:select class="mini" name="cgroup_id" value="${inrequest?.cgroup_id}" from="${Cgroup.list(sort:'name',order:'asc')}" optionKey="id" optionValue="name" noSelection="${['-100':'все']}"/>
+        <g:if test="${is_visual}">
+          <label class="auto" for="visualgroup_id">Видимость:</label>
+          <g:select class="mini" name="visualgroup_id" value="${inrequest?.visualgroup_id}" from="${Visualgroup.list()}" optionKey="id" optionValue="name" noSelection="${['-100':'все']}"/>
+        </g:if>
         </div>
         <div class="fright">
           <input type="button" class="spacing reset" value="Сброс" onclick="resetfilter()"/>
@@ -138,6 +154,7 @@
         <div class="clear"></div>
       </div>
       <input type="hidden" id="is_holding" name="is_holding" value="${inrequest?.is_holding?:0}" />
+      <input type="hidden" id="is_inactive" name="is_inactive" value="${inrequest?.is_inactive?:0}" />
     </g:formRemote>
     <div id="list"></div>
   </body>

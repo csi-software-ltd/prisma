@@ -52,7 +52,7 @@ class PayrequestClientSearch {
   BigDecimal curclientsaldo
   BigDecimal dinclientsaldo
 
-  def csiSelectPayments(iClientId,sCompanyName,iDeal,dPaydateStart,dPaydateEnd,iStatus,iComission,iTypeId,iNoInner,iSubClientId,iId,iMax,iOffset){
+  def csiSelectPayments(iClientId,sCompanyName,iRepayments,dPaydateStart,dPaydateEnd,iStatus,iComission,iTypeId,iNoInner,iSubClientId,iId,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -62,7 +62,7 @@ class PayrequestClientSearch {
     hsSql.where="p.agent_id=0 and p.modstatus>=0"+
                 ((iClientId>0)?' and p.client_id=:client_id':(iClientId==-1)?' and p.client_id>0':'')+
                 ((sCompanyName!='')?' and (c1.name like concat("%",:company_name,"%") or c2.name like concat("%",:company_name,"%"))':'')+
-                ((iDeal>0)?' and p.deal_id=0':'')+
+                ((iRepayments>0)?' and p.clientcommission>0':'')+
                 (dPaydateStart?' and p.paydate>=:paydatestart':'')+
                 (dPaydateEnd?' and p.paydate<=:paydateend':'')+
                 (iComission>0?' and p.comission>0':'')+

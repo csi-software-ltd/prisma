@@ -81,7 +81,7 @@ class Cashreport {
       new Cashevent(cashreport_id:id,cashzakaz_id:0,casheventtype_id:10,admin_id:initiator).setData(properties).save(failOnError:true)
       modstatus = -2
     }
-    else if(iStatus==-2&&modstatus==2&&iAccesslevel==3&&isThisMonth()){
+    else if(iStatus==-2&&modstatus==2&&iAccesslevel==3/*&&isThisMonth()*/){
       cashdepartment_id = new Cashdepartment(department_id:department_id,pers_id:(type?0:executor),operationdate:new Date(),admin_id:initiator,comment:'отмена подтверждения',expensetype_id:expensetype_id).fillData(valuta_id:857,maincashtype:9,maincashclass:2,receipt:file_id,summa:-summa).save(failOnError:true)?.id?:0
       new Cashevent(cashreport_id:id,cashzakaz_id:0,casheventtype_id:10,admin_id:initiator).setData(properties).save(failOnError:true)
       modstatus = -2

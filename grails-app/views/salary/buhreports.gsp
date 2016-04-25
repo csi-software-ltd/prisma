@@ -44,9 +44,9 @@
         <tr class="${!company.compstatus?'yellow':''}" align="center">
           <td>${company.companyname}</td>
         <g:if test="${company.compstatus<2&&iscanedit}">
-          <td onclick="this.firstChild.focus()"><span contenteditable="true" onblur="updateInn(${company.id},this.innerHTML)" onKeyDown="keyintercept(event)">${company.companyinn}</span></td>
+          <td onclick="this.firstChild.focus()" nowrap><span contenteditable="true" onblur="updateInn(${company.id},this.innerHTML)" onKeyDown="keyintercept(event)">${company.companyinn}</span></td>
         </g:if><g:else>
-          <td>${company.companyinn}</td>
+          <td nowrap>${company.companyinn}</td>
         </g:else>
           <td>НАЛОГИ</td>
           <td>${number(value:company.ndfl)}<g:if test="${company.debtndfl}"><br/><font color="red">${number(value:company.debtndfl)}</font></g:if></td>
@@ -68,9 +68,9 @@
         <tr class="${!pers.perstatus?'yellow':''}" align="center">
           <td></td>
         <g:if test="${pers.perstatus<2&&iscanedit}">
-          <td onclick="this.firstChild.focus()"><span contenteditable="true" onblur="updateSnils(${pers.id},this.innerHTML)" onKeyDown="keyintercept(event)">${pers.snils}</span></td>
+          <td onclick="this.firstChild.focus()" nowrap><span contenteditable="true" onblur="updateSnils(${pers.id},this.innerHTML)" onKeyDown="keyintercept(event)">${pers.snils}</span></td>
         </g:if><g:else>
-          <td>${pers.snils}</td>
+          <td nowrap>${pers.snils}</td>
         </g:else>
           <td>${pers.fio}<br/>${pers.position}</td>
           <td>${number(value:pers.fullsalary)}</td>

@@ -215,10 +215,16 @@
           if($(ids))
             $(ids).removeClassName('red');
         });
+        ['spacecalc_maindate'].forEach(function(ids){
+          if($(ids))
+            $(ids).up('span').removeClassName('k-error-colored');
+        });
         if(e.responseJSON.errorcode.length){
           e.responseJSON.errorcode.forEach(function(err){
             switch (err) {
               case 1: sErrorMsg+='<li>${message(code:"error.incorrect.message",args:["Сумма платежа"])}</li>'; $('spacecalc_summa').addClassName('red'); break;
+              case 2: sErrorMsg+='<li>${message(code:"error.blank.message",args:["Период"])}</li>'; $('spacecalc_maindate').up('span').addClassName('k-error-colored'); break;
+              case 3: sErrorMsg+='<li>${message(code:"error.not.unique2.message",args:["Начисление","периодом"])}</li>'; $('spacecalc_maindate').up('span').addClassName('k-error-colored'); break;
               case 100: sErrorMsg+='<li>${message(code:"error.bderror.message")}</li>'; break;
             }
           });
@@ -241,8 +247,8 @@
         }
 
         switch(iNum){
-          case 0: getPayments();break;
-          case 1: getPayrequests();break;
+          case 0: getPayrequests();break;
+          case 1: getPayments();break;
           case 2: getDopAgrs();break;
           case 3: getBankchecks();break;
           case 4: getServAgrs();break;
@@ -455,7 +461,7 @@
     <div class="tabs">
       <ul class="nav">
         <li><a href="javascript:void(0)" onclick="viewCell(0)">Платежи</a></li>
-        <li><a href="javascript:void(0)" onclick="viewCell(1)">Заявки на платежи</a></li>
+        <li><a href="javascript:void(0)" onclick="viewCell(1)">Платежи по выписке</a></li>
         <li><a href="javascript:void(0)" onclick="viewCell(2)">Доп. соглашения</a></li>
         <li><a href="javascript:void(0)" onclick="viewCell(3)">Банковские проверки</a></li>
         <li><a href="javascript:void(0)" onclick="viewCell(4)">Договора услуг</a></li>

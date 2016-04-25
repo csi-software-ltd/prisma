@@ -146,7 +146,7 @@ class AgreementController {
     session.agrlastRequest.agrobject = 1
 
     hsRes.searchresult = new LicenseSearch().csiSelectLicenses(hsRes.inrequest.company_id?:0,hsRes.inrequest.industry_id?:0,
-                                                               20,hsRes.inrequest.offset)
+                                                               session.user.group.visualgroup_id,20,hsRes.inrequest.offset)
     hsRes.industries = Industry.list().inject([:]){map, industry -> map[industry.id]=industry.name;map}
 
     return hsRes
@@ -370,6 +370,52 @@ class AgreementController {
     return
   }
 
+  def licpayrequests = {
+    checkAccess(7)
+    checkSectionAccess(1)
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 7
+
+    hsRes.license = License.get(requestService.getIntDef('id',0))
+    if (!hsRes.license) {
+      render(contentType:"application/json"){[error:true]}
+      return
+    }
+
+    hsRes.payrequests = Payrequest.findAllByAgreementtype_idAndAgreement_idAndModstatusGreaterThan(1,hsRes.license.id,-1,[sort:'paydate',order:'desc'])
+    hsRes.iscanedit = recieveSectionPermission(ALICEDIT)
+
+    return hsRes
+  }
+
+  def deletelicpayrequest = {
+    checkAccess(7)
+    if (!checkSectionAccess(1)) return
+    if (!checkSectionPermission(ALICEDIT)) return
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 7
+
+    hsRes.agr = License.get(requestService.getLongDef('agr_id',0))
+    hsRes.payrequest = Payrequest.findByAgreementtype_idAndAgreement_idAndId(1,hsRes.agr?.id?:-1,requestService.getLongDef('id',0))
+    if (!hsRes.agr||hsRes.payrequest?.modstatus!=0) {
+      render(contentType:"application/json"){[error:true]}
+      return
+    }
+
+    try {
+      hsRes.payrequest.delete(failOnError:true)
+    } catch(Exception e) {
+      log.debug("Error save data in Agreement/deletelicpayrequest\n"+e.toString())
+    }
+
+    render(contentType:"application/json"){[error:false]}
+    return
+  }
+
   def licpayments = {
     checkAccess(7)
     checkSectionAccess(1)
@@ -520,7 +566,7 @@ class AgreementController {
                                                            hsRes.inrequest.responsible?:0l,hsRes.inrequest.debt?:0,
                                                            hsRes.inrequest.is_nds?:0,hsRes.inrequest.is_adrsame?:0,
                                                            hsRes.inrequest.modstatus?:0,hsRes.inrequest.enddate,
-                                                           hsRes.inrequest.anumber?:'',20,hsRes.inrequest.offset)
+                                                           hsRes.inrequest.anumber?:'',session.user.group.visualgroup_id,20,hsRes.inrequest.offset)
     hsRes.debts = hsRes.searchresult.records.inject([:]){map, space -> map[space.id]=agentKreditService.computeSpaceDebt(space);map}
     hsRes.spacetypes = Spacetype.list().inject([:]){map, spacetype -> map[spacetype.id]=spacetype.name;map}
     hsRes.arendatypes = Arendatype.list().inject([:]){map, arendatype -> map[arendatype.id]=arendatype.name;map}
@@ -670,7 +716,7 @@ class AgreementController {
       return
     }
 
-    hsRes.payments = Payment.findAllByAgreementtype_idAndAgreement_id(2,hsRes.space.id,[sort:'paydate',order:'desc'])
+    hsRes.payments = Payment.findAll(sort:'paydate',order:'desc'){ agreementtype_id == 2 && agreement_id == hsRes.space.id && (paytype != 2 || is_internal != 1) }
 
     return hsRes
   }
@@ -1056,6 +1102,31 @@ class AgreementController {
     return hsRes
   }
 
+  def deletespacecalculation = {
+    checkAccess(7)
+    if (!checkSectionAccess(2)) return
+    if (!checkSectionPermission(ASPEDIT)) return
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 7
+
+    hsRes.space = Space.get(requestService.getLongDef('space_id',0))
+    if (!hsRes.space) {
+      render(contentType:"application/json"){[error:true]}
+      return
+    }
+
+    try {
+      Spacecalculation.findBySpace_idAndId(hsRes.space.id,requestService.getIntDef('id',0))?.delete(failOnError:true)
+    } catch(Exception e) {
+      log.debug("Error save data in Agreement/deletespacecalculation\n"+e.toString())
+    }
+
+    render(contentType:"application/json"){[error:false]}
+    return
+  }
+
   def spacecalculation = {
     checkAccess(7)
     checkSectionAccess(2)
@@ -1065,12 +1136,12 @@ class AgreementController {
     hsRes.action_id = 7
 
     hsRes.space = Space.get(requestService.getIntDef('space_id',0))
-    hsRes.spacecalc = Spacecalculation.findBySpace_idAndId(hsRes.space?.id?:0,requestService.getIntDef('id',0))
-    if (!hsRes.spacecalc) {
+    if (!hsRes.space) {
       render(contentType:"application/json"){[error:true]}
       return
     }
 
+    hsRes.spacecalc = Spacecalculation.findBySpace_idAndId(hsRes.space.id,requestService.getIntDef('id',0))
     hsRes.iscanedit = recieveSectionPermission(ASPEDIT)
 
     return hsRes
@@ -1085,22 +1156,30 @@ class AgreementController {
     hsRes.user = User.get(session.user.id)
     hsRes.action_id = 7
     hsRes.result=[errorcode:[]]
- 
-    hsRes.space = Space.get(requestService.getIntDef('space_id',0))
-    hsRes.spacecalc = Spacecalculation.findBySpace_idAndId(hsRes.space?.id?:0,requestService.getIntDef('id',0))
-    if (!hsRes.spacecalc) {
+
+    hsRes+=requestService.getParams(['id','is_dop'],null,['schet'],null,['summa'])
+    hsRes.inrequest.schetdate = requestService.getDate('spacecalc_schetdate')
+    hsRes.inrequest.maindate = requestService.getDate('spacecalc_maindate')
+
+    hsRes.space = Space.get(requestService.getLongDef('space_id',0))
+    hsRes.spacecalc = Spacecalculation.findBySpace_idAndId(hsRes.space?.id?:0,hsRes.inrequest.id?:0)
+    if (!hsRes.space||(!hsRes.spacecalc&&hsRes.inrequest.id)) {
       render(contentType:"application/json"){[error:true]}
       return
     }
 
-    hsRes+=requestService.getParams(null,null,['schet'],null,['summa'])
-    hsRes.inrequest.schetdate = requestService.getDate('spacecalc_schetdate')
-
     if(hsRes.inrequest.summa&&hsRes.inrequest.summa<0)
       hsRes.result.errorcode<<1
+    if(!hsRes.inrequest.id){
+      if(!hsRes.inrequest.maindate)
+        hsRes.result.errorcode<<2
+      else if(Spacecalculation.findAllBySpace_idAndMonthAndYearAndIs_dop(hsRes.space.id,hsRes.inrequest.maindate.getMonth()+1,hsRes.inrequest.maindate.getYear()+1900,hsRes.inrequest.is_dop?:0))
+        hsRes.result.errorcode<<3
+    }
 
     if(!hsRes.result.errorcode){
       try {
+        if (!hsRes.inrequest.id) hsRes.spacecalc = new Spacecalculation(space_id:hsRes.space.id,is_dop:hsRes.inrequest.is_dop?:0).setBaseData(month:hsRes.inrequest.maindate.getMonth()+1,year:hsRes.inrequest.maindate.getYear()+1900,calcdate:new Date())
         hsRes.spacecalc.setData(hsRes.inrequest).save(failOnError:true)
       } catch(Exception e) {
         log.debug("Error save data in Agreement/updatespacecalculation\n"+e.toString())
@@ -1239,7 +1318,8 @@ class AgreementController {
                                                              hsRes.inrequest.responsible?:0l,hsRes.inrequest.debt?:0,
                                                              hsRes.inrequest.lizsort?:0,hsRes.inrequest.modstatus?:0,
                                                              hsRes.inrequest.project_id?:0,hsRes.inrequest.car_id?:0,
-                                                             hsRes.inrequest.cessionstatus?:0,20,hsRes.inrequest.offset)
+                                                             hsRes.inrequest.cessionstatus?:0,
+                                                             session.user.group.visualgroup_id,20,hsRes.inrequest.offset)
     hsRes.restfees = hsRes.searchresult.records.inject([:]){map, lizing -> map[lizing.id]=agentKreditService.computeLizingDebt(lizing);map}
 
     return hsRes
@@ -1975,7 +2055,8 @@ class AgreementController {
     hsRes.searchresult = new TradeSearch().csiSelectTrades(hsRes.inrequest.inn?:'',hsRes.inrequest.company_name?:'',
                                                            hsRes.inrequest.responsible?:0l,hsRes.inrequest.debt?:0,
                                                            hsRes.inrequest.tradesort?:0,hsRes.inrequest.tradetype?:0,
-                                                           hsRes.inrequest.modstatus?:0,20,hsRes.inrequest.offset)
+                                                           hsRes.inrequest.modstatus?:0,session.user.group.visualgroup_id,
+                                                           20,hsRes.inrequest.offset)
     hsRes.tradecats = Tradecat.list().inject([:]){map, cat -> map[cat.id]=cat.name;map}
 
     return hsRes
@@ -2265,7 +2346,8 @@ class AgreementController {
                                                              hsRes.inrequest.is_real?:0,hsRes.inrequest.is_tech?:0,hsRes.inrequest.is_realtech?:0,
                                                              hsRes.inrequest.responsible?:0,hsRes.inrequest.cessionstatus?:0,
                                                              hsRes.inrequest.zalogstatus?:0,hsRes.inrequest.modstatus?:0,
-                                                             hsRes.inrequest.is_nocheck?:0,recieveSectionPermission(AKRREAL),20,hsRes.inrequest.offset)
+                                                             hsRes.inrequest.is_nocheck?:0,recieveSectionPermission(AKRREAL),
+                                                             session.user.group.visualgroup_id,20,hsRes.inrequest.offset)
     hsRes.valutas = Valuta.list().inject([:]){map, valuta -> map[valuta.id]=valuta.code.toLowerCase();map}
     hsRes.debts = hsRes.searchresult.records.inject([:]){map, kredit -> map[kredit.id]=agentKreditService.computeKreditDebt(kredit);map}
 
@@ -2382,9 +2464,9 @@ class AgreementController {
     if(!hsRes.result.errorcode){
       try {
         if(!lId) hsRes.kredit = new Kredit(client:Company.findByNameOrInn(hsRes.inrequest.client,hsRes.inrequest.client)?.id,bank_id:Bank.findByNameOrId(hsRes.inrequest.bank,hsRes.inrequest.bank).id).setMainAgrData(hsRes.inrequest)
-        hsRes.result.kredit = hsRes.kredit.setData(hsRes.inrequest).csiSetAdmin(session.user.id).csiSetModstatus(hsRes.inrequest.modstatus).save(failOnError:true)?.id?:0
+        hsRes.result.kredit = hsRes.kredit.setData(hsRes.inrequest).csiSetAdmin(session.user.id).csiSetModstatus(hsRes.inrequest.modstatus).save(failOnError:true,flush:true)?.id?:0
         if (hsRes.kredit.is_tech) Agentagr.findAllByIdInListAndClient_idAndModstatus(Agentagrbank.findAllByBank_id(hsRes.kredit.bank_id).collect{it.agentagr_id},hsRes.kredit.client_id,1).each{
-          if (!Agentkredit.findByAgentagr_idAndKredit_id(it.id,hsRes.kredit.id)) new Agentkredit(agentagr_id:it.id,kredit_id:hsRes.kredit.id).setData([:]).save(failOnError:true)
+          if (!Agentkredit.findByAgentagr_idAndKredit_id(it.id,hsRes.kredit.id)) new Agentkredit(agentagr_id:it.id).csiSetKreditPeriod(Agentperiod.findByKredit_id(hsRes.kredit.id)).setData([:]).save(failOnError:true)
         }
         hsRes.result.debt = agentKreditService.computeKreditDebt(hsRes.kredit)
       } catch(Exception e) {
@@ -3328,7 +3410,8 @@ class AgreementController {
     hsRes.searchresult = new CessionSearch().csiSelectCessions(hsRes.inrequest.inn?:'',hsRes.inrequest.company_name?:'',
                                                                hsRes.inrequest.bank_id?:'',hsRes.inrequest.valuta_id?:0,
                                                                hsRes.inrequest.agr_id?:0,hsRes.inrequest.changetype?:0,
-                                                               hsRes.inrequest.modstatus?:0,20,hsRes.inrequest.offset)
+                                                               hsRes.inrequest.modstatus?:0,session.user.group.visualgroup_id,
+                                                               20,hsRes.inrequest.offset)
     hsRes.valutacodes = Valuta.list().inject([:]){map, valuta -> map[valuta.id]=valuta.code;map}
 
     return hsRes
@@ -3356,6 +3439,7 @@ class AgreementController {
     hsRes.debtor = Company.get(hsRes.cession?.debtor)?.name
     hsRes.cbanks = Bankaccount.findAllByCompany_idAndModstatusAndTypeaccount_id(hsRes.cession?.cessionary?:0,1,1).collect{Bank.get(it.bank_id)}
     hsRes.users = new UserpersSearch().csiFindByAccessrigth(ACESEDIT)
+    hsRes.clients = Client.findAllByModstatusAndIdNotEqual(1,hsRes.cession?.client_id?:0)+[Client.get(hsRes.cession?.client_id?:0)]-null
     hsRes.iscanedit = recieveSectionPermission(ACESEDIT)
     hsRes.iscanpay = recieveSectionPermission(ACESPAY)
 
@@ -3380,7 +3464,7 @@ class AgreementController {
 
     def oKredit = Kredit.get(requestService.getIntDef('kredit_id',0))
     if(!oKredit) render(contentType:"application/json"){[error:true]}
-    else render ([cedent:Bank.get(oKredit.bank_id).toString(),debtor:Company.get(oKredit.client).name] as JSON)
+    else render ([cedent:Bank.get(oKredit.bank_id).toString(),debtor:Company.get(oKredit.client).name,client_id:oKredit.curclient_id] as JSON)
   }
 
   def lizingdata = {
@@ -3413,9 +3497,9 @@ class AgreementController {
       return
     }
 
-    hsRes+=requestService.getParams(['kredit_id','cessiontype','valuta_id','is_dirsalary','is_debtfull','cessionvariant','lizing_id'],
-                                    ['responsible'],['cessionary','anumber','dopagrcomment','description','comment',
-                                    'procdebtperiod','cbank_id'],null,['maindebt','procdebt'])
+    hsRes+=requestService.getParams(['kredit_id','cessiontype','valuta_id','is_dirsalary','is_debtfull','cessionvariant',
+                                     'lizing_id','client_id'],['responsible'],['cessionary','anumber','dopagrcomment',
+                                     'description','comment','procdebtperiod','cbank_id'],null,['maindebt','procdebt'])
     hsRes.inrequest.adate = requestService.getDate('adate')
     hsRes.inrequest.enddate = requestService.getDate('enddate')
     if(hsRes.cession) hsRes.inrequest.cessionvariant = hsRes.cession.cessionvariant
@@ -3426,7 +3510,7 @@ class AgreementController {
       hsRes.result.errorcode<<2
     else if(Company.findAllByNameOrInn(hsRes.inrequest.cessionary,hsRes.inrequest.cessionary).size()>1)
       hsRes.result.errorcode<<3
-    if (hsRes.inrequest.cessionvariant==1){
+    else if (hsRes.inrequest.cessionvariant==1){
       if(!hsRes.inrequest.kredit_id)
         hsRes.result.errorcode<<4
       else if(!Kredit.get(hsRes.inrequest.kredit_id))
@@ -3458,7 +3542,7 @@ class AgreementController {
 
     if(!hsRes.result.errorcode){
       try {
-        if(!lId) hsRes.cession = new Cession(cessionvariant:hsRes.inrequest.cessionvariant)
+        if(!lId) hsRes.cession = new Cession(cessionvariant:hsRes.inrequest.cessionvariant).csiSetClient_id(hsRes.inrequest.client_id)
         hsRes.result.cession = hsRes.cession.setData(hsRes.inrequest).csiSetAdmin(session.user.id).csiSetDopComment(hsRes.inrequest.dopagrcomment).csiSetDirSalary(hsRes.inrequest.is_dirsalary,session.user.group.is_rep_dirsalary).save(failOnError:true)?.id?:0
       } catch(Exception e) {
         log.debug("Error save data in Agreement/updatecession\n"+e.toString())
@@ -3700,7 +3784,7 @@ class AgreementController {
     checkSectionAccess(5)
     requestService.init(this)
 
-    render(view: "spacebanklist", model: [notauto:true,banks:Kredit.findAllByClient_id(requestService.getIntDef('client_id',0)?:-1).collect{it.bank_id}.unique().collect{Bank.get(it)}])
+    render(view: "spacebanklist", model: [notauto:true,banks:Kredit.findAllByClient_idOrCurclient_id(requestService.getIntDef('client_id',0)?:-1,requestService.getIntDef('client_id',0)?:-1).collect{it.bank_id}.unique().collect{Bank.get(it)}])
     return
   }
 
@@ -3807,8 +3891,8 @@ class AgreementController {
         hsRes.result.agentagr = hsRes.agentagr.setData(hsRes.inrequest).save(failOnError:true)?.id?:0
         if (!isHaveCredit){
           Agentagrbank.findOrCreateByAgentagr_idAndIs_main(hsRes.agentagr.id,1).updateBank(hsRes.inrequest.bank_id).save(failOnError:true,flush:true)
-          Kredit.findAllByModstatusAndBank_idAndClient_idAndIs_tech(1,hsRes.agentagr.bank_id,hsRes.agentagr.client_id,1).each{
-            new Agentkredit(agentagr_id:hsRes.agentagr.id,kredit_id:it.id).setData(hsRes.inrequest).save(failOnError:true)
+          Agentperiod.findAllByKredit_idInListAndClient_id(Kredit.findAllByModstatusAndBank_idAndIs_tech(1,hsRes.agentagr.bank_id,1).collect{it.id}?:[0],hsRes.agentagr.client_id).each{
+            if (!Agentkredit.findByAgentagr_idAndAgentperiod_id(hsRes.agentagr.id,it.id)) new Agentkredit(agentagr_id:hsRes.agentagr.id).csiSetKreditPeriod(it).setData(hsRes.inrequest).save(failOnError:true)
           }
         }
         if(hsRes.inrequest.newaddbanknumber){
@@ -3920,7 +4004,7 @@ class AgreementController {
     hsRes.agentagrbanks = Agentagrbank.findAllByAgentagr_id(hsRes.agentagr.id).collect{it.bank_id}
     hsRes.clients = Kredit.getClientsBank(hsRes.agentagrbanks,hsRes.agentagr.client_id)
     hsRes.client = Company.get(hsRes.inrequest.client?:0)
-    hsRes.kredits = Kredit.findAllByBank_idInListAndClientAndClient_idAndModstatusAndIs_tech(hsRes.agentagrbanks,hsRes.client?.id?:0,hsRes.agentagr.client_id,1,1)
+    hsRes.kredits = Agentperiod.findAllByKredit_idInListAndClient_id(Kredit.findAllByBank_idInListAndClientAndModstatusAndIs_tech(hsRes.agentagrbanks,hsRes.client?.id?:0,1,1).collect{it.id}?:[0],hsRes.agentagr.client_id)
     hsRes.iscanedit = recieveSectionPermission(AAGEDIT)
 
     return hsRes
@@ -3999,7 +4083,7 @@ class AgreementController {
     if(!hsRes.result.errorcode&&!hsRes.result.newagenterrorcode){
       try {
         if(!hsRes.inrequest.is_bankkredit||hsRes.inrequest.agentkredit_kredit_id){
-          if(!lId) hsRes.agentkredit = new Agentkredit(agentagr_id:hsRes.inrequest.agentagr_id,kredit_id:hsRes.inrequest.agentkredit_kredit_id)
+          if(!lId) hsRes.agentkredit = new Agentkredit(agentagr_id:hsRes.inrequest.agentagr_id).csiSetKreditPeriod(Agentperiod.get(hsRes.inrequest.agentkredit_kredit_id))
           hsRes.agentkredit.setData(hsRes.inrequest).save(failOnError:true)
           if(hsRes.inrequest.newagentnumber){
             for(int i=1;i<=hsRes.inrequest.newagentnumber;++i){
@@ -4011,9 +4095,9 @@ class AgreementController {
             it.setData(hsRes.inrequest).save(failOnError:true)
           }
         } else {
-          def kreditlist = (hsRes.inrequest.bankkredit_client?Kredit.findAllByBank_idInListAndClientAndClient_idAndModstatusAndIs_tech(Agentagrbank.findAllByAgentagr_id(hsRes.agentagr.id).collect{it.bank_id},hsRes.inrequest.bankkredit_client,hsRes.agentagr.client_id,1,1):Kredit.findAllByModstatusAndBank_idInListAndClient_idAndIs_tech(1,Agentagrbank.findAllByAgentagr_id(hsRes.agentagr.id).collect{it.bank_id},hsRes.agentagr.client_id,1))
-          kreditlist.each{
-            if (!Agentkredit.findByAgentagr_idAndKredit_id(hsRes.inrequest.agentagr_id,it.id)) new Agentkredit(agentagr_id:hsRes.inrequest.agentagr_id,kredit_id:it.id).setData(hsRes.inrequest).save(failOnError:true)
+          def agentperiodlist = Agentperiod.findAllByKredit_idInListAndClient_id((hsRes.inrequest.bankkredit_client?Kredit.findAllByBank_idInListAndClientAndModstatusAndIs_tech(Agentagrbank.findAllByAgentagr_id(hsRes.agentagr.id).collect{it.bank_id},hsRes.inrequest.bankkredit_client,1,1):Kredit.findAllByModstatusAndBank_idInListAndIs_tech(1,Agentagrbank.findAllByAgentagr_id(hsRes.agentagr.id).collect{it.bank_id},1)).collect{it.id}?:[0],hsRes.agentagr.client_id)
+          agentperiodlist.each{
+            if (!Agentkredit.findByAgentagr_idAndAgentperiod_id(hsRes.inrequest.agentagr_id,it.id)) new Agentkredit(agentagr_id:hsRes.inrequest.agentagr_id).csiSetKreditPeriod(it).setData(hsRes.inrequest).save(failOnError:true)
           }
         }
       } catch(Exception e) {
@@ -4145,9 +4229,101 @@ class AgreementController {
     if(!hsRes.result.errorcode){
       try {
         def oCalendar = Calendar.getInstance()
-        if (hsRes.agentperiod.modstatus==0&&hsRes.agentperiod.is_last) hsRes.agentkredit.updateCalcdate(hsRes.agentperiod.setDates(hsRes.agentperiod.datestart,hsRes.enddate).csiSetCalcrate(requestService.getBigDecimalDef('calcrate',0.0g).toFloat()).csiSetCalccost(requestService.getBigDecimalDef('calccost',0.0g).toFloat()).calculateSum(oCalendar,Agentkreditplan.findAllByAgentkredit_idAndIdNotEqual(hsRes.agentkredit.id,hsRes.agentperiod.id,[sort:'dateend',order:'asc']).sum{ it.recalculatePeriod(oCalendar) }?:0g)?.save(failOnError:true)?.dateend).save(failOnError:true)
+        if (hsRes.agentperiod.modstatus==0&&hsRes.agentperiod.is_last)
+          hsRes.agentkredit.updateCalcdate(hsRes.agentperiod.setDates(hsRes.agentperiod.datestart,hsRes.enddate)
+                                                            .csiSetCalcrate(requestService.getBigDecimalDef('calcrate',0.0g).toFloat())
+                                                            .csiSetCalccost(requestService.getBigDecimalDef('calccost',0.0g).toFloat())
+                                                            .csiSetVrate(requestService.getBigDecimalDef('vrate',1.0g))
+                                                            .csiSetPayterm(requestService.getIntDef('payterm',0))
+                                                            .csiSetCalcperiod(requestService.getIntDef('calcperiod',0))
+                                                            .calculateSum(oCalendar,Agentkreditplan.findAllByAgentkredit_idAndIdNotEqualAndParent(hsRes.agentkredit.id,hsRes.agentperiod.id,0,[sort:'dateend',order:'asc']).sum{ it.recalculatePeriod(oCalendar) }?:0g)
+                                                            .save(failOnError:true)?.dateend
+                                          ).save(failOnError:true)
       } catch(Exception e) {
         log.debug("Error save data in Agreement/updateperiod\n"+e.toString())
+        hsRes.result.errorcode << 100
+      }
+    }
+
+    render hsRes.result as JSON
+    return
+  }
+
+  def deleteperiod = {
+    checkAccess(7)
+    if (!checkSectionAccess(5)) return
+    if (!checkSectionPermission(AAGEDIT)) return
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 7
+
+    hsRes.agentkredit = Agentkredit.get(requestService.getIntDef('id',0))
+    hsRes.period = Agentkreditplan.findByAgentkredit_idAndId(hsRes.agentkredit.id,requestService.getIntDef('period_id',0))
+    if (!hsRes.agentkredit||hsRes.period?.modstatus!=0) {
+      render(contentType:"application/json"){[error:true]}
+      return
+    }
+
+    try {
+      hsRes.period.delete(failOnError:true,flush:true)
+    } catch(Exception e) {
+      log.debug("Error save data in Agreement/deleteperiod\n"+e.toString())
+    }
+
+    render(contentType:"application/json"){[error:false]}
+    return
+  }
+
+  def agentaddperiod = {
+    checkAccess(7)
+    checkSectionAccess(5)
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 7
+
+    hsRes.agentagr = Agentagr.get(requestService.getIntDef('agentagr_id',0))
+    if (!hsRes.agentagr) {
+      render(contentType:"application/json"){[error:true]}
+      return
+    }
+
+    hsRes.periods = new AgentkreditplanSearch().csiSelectPeriodsForFix(hsRes.agentagr.id)
+    hsRes.iscanedit = recieveSectionPermission(AAGEDIT)
+
+    return hsRes
+  }
+
+  def updateaddperiod = {
+    checkAccess(7)
+    checkSectionAccess(5)
+    if (!checkSectionPermission(AAGEDIT)) return
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 7
+    hsRes.result=[errorcode:[]]
+
+    hsRes.agentagr = Agentagr.get(requestService.getIntDef('agentagr_id',0))
+    if (!hsRes.agentagr) {
+      render(contentType:"application/json"){[error:true]}
+      return
+    }
+
+    hsRes.agentperiod = Agentkreditplan.get(requestService.getIntDef('period_id',0))
+    hsRes.calcrate = requestService.getBigDecimalDef('calcrate',0.0g)
+
+    if(hsRes.calcrate<0)
+      hsRes.result.errorcode<<1
+    if(!hsRes.agentperiod)
+      hsRes.result.errorcode<<2
+
+    if(!hsRes.result.errorcode){
+      try {
+        new Agentkreditplan(parent:hsRes.agentperiod.id).fillFrom(hsRes.agentperiod).csiSetCalcrate(hsRes.calcrate.toFloat()).calculateFixperiodSum(Calendar.getInstance()).save(failOnError:true)
+      } catch(Exception e) {
+        log.debug("Error save data in Agreement/updateaddperiod\n"+e.toString())
         hsRes.result.errorcode << 100
       }
     }
@@ -4210,32 +4386,6 @@ class AgreementController {
       if (basedate) agentKreditService.updateAgentagrPeriod(requestService.getIntDef('id',0),basedate)
     } catch(Exception e) {
       log.debug("Error save data in Agreement/computeoldperiods\n"+e.toString())
-    }
-
-    render(contentType:"application/json"){[error:false]}
-    return
-  }
-
-  def deleteperiod = {
-    checkAccess(7)
-    if (!checkSectionAccess(5)) return
-    if (!checkSectionPermission(AAGEDIT)) return
-    requestService.init(this)
-    def hsRes = requestService.getContextAndDictionary(true)
-    hsRes.user = User.get(session.user.id)
-    hsRes.action_id = 7
-
-    hsRes.agentkredit = Agentkredit.get(requestService.getIntDef('id',0))
-    hsRes.period = Agentkreditplan.findByAgentkredit_idAndId(hsRes.agentkredit.id,requestService.getIntDef('period_id',0))
-    if (!hsRes.agentkredit||hsRes.period?.modstatus!=0) {
-      render(contentType:"application/json"){[error:true]}
-      return
-    }
-
-    try {
-      hsRes.period.delete(failOnError:true,flush:true)
-    } catch(Exception e) {
-      log.debug("Error save data in Agreement/deleteperiod\n"+e.toString())
     }
 
     render(contentType:"application/json"){[error:false]}
@@ -4709,7 +4859,11 @@ class AgreementController {
 
     try {
       def oCalendar = Calendar.getInstance()
-      hsRes.agentrateperiod.csiSetCalcrate(hsRes.calcrate).csiSetCalccost(hsRes.calccost).calculateSum(oCalendar,Agentratekreditplan.createCriteria().list(sort:'dateend',order:'desc') { eq('agentkredit_id',hsRes.agentrateperiod.agentkredit_id) ne('id',hsRes.agentrateperiod.id) or { lt('year',hsRes.agentrateperiod.year) le('month',hsRes.agentrateperiod.month) } }.sum{ it.recalculatePeriod(oCalendar) }?:0g)?.save(failOnError:true,flush:true)
+      hsRes.agentrateperiod.csiSetCalcrate(hsRes.calcrate)
+                           .csiSetCalccost(hsRes.calccost)
+                           .csiSetVrate(requestService.getBigDecimalDef('vrate',1.0g))
+                           .calculateSum(oCalendar,Agentratekreditplan.createCriteria().list(sort:'dateend',order:'desc') { eq('agentkredit_id',hsRes.agentrateperiod.agentkredit_id) ne('id',hsRes.agentrateperiod.id) or { lt('year',hsRes.agentrateperiod.year) le('month',hsRes.agentrateperiod.month) } }.sum{ it.recalculatePeriod(oCalendar) }?:0g)
+                           .save(failOnError:true,flush:true)
       hsRes.agentrates.each{
         it.setData(hsRes.inrequest).save(failOnError:true)
       }
@@ -5175,7 +5329,8 @@ class AgreementController {
     hsRes.searchresult = new ServiceSearch().csiSelectServices(hsRes.inrequest.sid?:0,hsRes.inrequest.zcompany_name?:'',
                                                                hsRes.inrequest.ecompany_name?:'',hsRes.inrequest.atype?:0,
                                                                hsRes.inrequest.asort?:0,hsRes.inrequest.modstatus?:0,
-                                                               hsRes.inrequest.dateend,20,hsRes.inrequest.offset)
+                                                               hsRes.inrequest.dateend,session.user.group.visualgroup_id,
+                                                               20,hsRes.inrequest.offset)
     hsRes.stypes = Servicetype.list().inject([:]){map, type -> map[type.id]=type.name;map}
 
     return hsRes
@@ -5423,6 +5578,31 @@ class AgreementController {
     return hsRes
   }
 
+  def deleteservicecalculation = {
+    checkAccess(7)
+    if (!checkSectionAccess(8)) return
+    if (!checkSectionPermission(ASEREDIT)) return
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 7
+
+    hsRes.service = Service.get(requestService.getLongDef('service_id',0))
+    if (!hsRes.service) {
+      render(contentType:"application/json"){[error:true]}
+      return
+    }
+
+    try {
+      Servicecalculation.findByService_idAndId(hsRes.service.id,requestService.getIntDef('id',0))?.delete(failOnError:true)
+    } catch(Exception e) {
+      log.debug("Error save data in Agreement/deleteservicecalculation\n"+e.toString())
+    }
+
+    render(contentType:"application/json"){[error:false]}
+    return
+  }
+
   def servicecalculation = {
     checkAccess(7)
     checkSectionAccess(8)
@@ -5432,12 +5612,12 @@ class AgreementController {
     hsRes.action_id = 7
 
     hsRes.service = Service.get(requestService.getIntDef('service_id',0))
-    hsRes.servcalc = Servicecalculation.findByService_idAndId(hsRes.service?.id?:0,requestService.getIntDef('id',0))
-    if (!hsRes.servcalc) {
+    if (!hsRes.service) {
       render(contentType:"application/json"){[error:true]}
       return
     }
 
+    hsRes.servcalc = Servicecalculation.findByService_idAndId(hsRes.service.id?:0,requestService.getIntDef('id',0))
     hsRes.iscanedit = recieveSectionPermission(ASEREDIT)
 
     return hsRes
@@ -5452,22 +5632,30 @@ class AgreementController {
     hsRes.user = User.get(session.user.id)
     hsRes.action_id = 7
     hsRes.result=[errorcode:[]]
- 
+
+    hsRes+=requestService.getParams(['id'],null,['schet'],null,['summa'])
+    hsRes.inrequest.schetdate = requestService.getDate('servcalc_schetdate')
+    hsRes.inrequest.maindate = requestService.getDate('servcalc_maindate')
+
     hsRes.service = Service.get(requestService.getIntDef('service_id',0))
-    hsRes.servcalc = Servicecalculation.findByService_idAndId(hsRes.service?.id?:0,requestService.getIntDef('id',0))
-    if (!hsRes.servcalc) {
+    hsRes.servcalc = Servicecalculation.findByService_idAndId(hsRes.service?.id?:0,hsRes.inrequest.id?:0)
+    if (!hsRes.service||(!hsRes.servcalc&&hsRes.inrequest.id)) {
       render(contentType:"application/json"){[error:true]}
       return
     }
 
-    hsRes+=requestService.getParams(null,null,['schet'],null,['summa'])
-    hsRes.inrequest.schetdate = requestService.getDate('servcalc_schetdate')
-
     if(hsRes.inrequest.summa&&hsRes.inrequest.summa<0)
       hsRes.result.errorcode<<1
+    if(!hsRes.inrequest.id){
+      if(!hsRes.inrequest.maindate)
+        hsRes.result.errorcode<<2
+      else if(Servicecalculation.findAllByService_idAndMonthAndYear(hsRes.service.id,hsRes.inrequest.maindate.getMonth()+1,hsRes.inrequest.maindate.getYear()+1900))
+        hsRes.result.errorcode<<3
+    }
 
     if(!hsRes.result.errorcode){
       try {
+        if (!hsRes.inrequest.id) hsRes.servcalc = new Servicecalculation(service_id:hsRes.service.id).setBaseData(month:hsRes.inrequest.maindate.getMonth()+1,year:hsRes.inrequest.maindate.getYear()+1900,calcdate:new Date())
         hsRes.servcalc.setData(hsRes.inrequest).save(failOnError:true)
       } catch(Exception e) {
         log.debug("Error save data in Agreement/updateservicecalculation\n"+e.toString())
@@ -5661,7 +5849,8 @@ class AgreementController {
 
     hsRes.searchresult = new SmrSearch().csiSelectSmrs(hsRes.inrequest.client_name?:'',hsRes.inrequest.supplier_name?:'',
                                                        hsRes.inrequest.smrcat_id?:0,hsRes.inrequest.smrsort?:0,
-                                                       hsRes.inrequest.modstatus?:0,20,hsRes.inrequest.offset)
+                                                       hsRes.inrequest.modstatus?:0,session.user.group.visualgroup_id,
+                                                       20,hsRes.inrequest.offset)
     hsRes.smrcats = Smrcat.list().inject([:]){map, cat -> map[cat.id]=cat.name;map}
 
     return hsRes
@@ -5945,7 +6134,8 @@ class AgreementController {
     session.agrlastRequest.agrobject = 10
 
     hsRes.searchresult = new LoanSearch().csiSelectLoans(hsRes.inrequest.client_name?:'',hsRes.inrequest.lender_name?:'',
-                                                         hsRes.inrequest.loantype?:0,hsRes.inrequest.modstatus?:0,20,hsRes.inrequest.offset)
+                                                         hsRes.inrequest.loantype?:0,hsRes.inrequest.modstatus?:0,
+                                                         session.user.group.visualgroup_id,20,hsRes.inrequest.offset)
     hsRes.valutas = Valuta.list().inject([:]){map, valuta -> map[valuta.id]=valuta.code.toLowerCase();map}
 
     return hsRes
@@ -6635,7 +6825,7 @@ class AgreementController {
     }
     session.agrlastRequest.agrobject = 12
 
-    hsRes.searchresult = new FinlizingSearch().csiSelectFLizings(hsRes.inrequest,20,hsRes.inrequest.offset)
+    hsRes.searchresult = new FinlizingSearch().csiSelectFLizings(hsRes.inrequest,session.user.group.visualgroup_id,20,hsRes.inrequest.offset)
     hsRes.summaries = hsRes.searchresult.records.inject([:]){map, flizing -> map[flizing.id]=agentKreditService.computeFinLizingBalance(flizing);map}
 
     return hsRes

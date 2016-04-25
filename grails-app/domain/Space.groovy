@@ -206,7 +206,7 @@ class Space {
   }
 
   void accruePayments(Date _date, Integer _monthdays){
-    if(((_date.getMonth()>=adate.getMonth()&&_date.getYear()==adate.getYear())||_date.getYear()>adate.getYear())||((_date.getMonth()<=enddate.getMonth()&&_date.getYear()==enddate.getYear())||_date.getYear()<enddate.getYear())){
+    if(((_date.getMonth()>=adate.getMonth()&&_date.getYear()==adate.getYear())||_date.getYear()>adate.getYear())&&((_date.getMonth()<=enddate.getMonth()&&_date.getYear()==enddate.getYear())||_date.getYear()<enddate.getYear())){
       new Spacecalculation(space_id:id,is_dop:0).setBaseData(month:_date.getMonth()+1,year:_date.getYear()+1900,calcdate:new Date()).setData(summa:computeSumma(_date,false,_monthdays)).save(flush:true)
       if (is_addpayment&&ratedop>0) new Spacecalculation(space_id:id,is_dop:1).setBaseData(month:_date.getMonth()+1,year:_date.getYear()+1900,calcdate:new Date()).setData(summa:computeSumma(_date,true,_monthdays)).save(flush:true)
     }

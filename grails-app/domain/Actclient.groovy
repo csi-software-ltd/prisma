@@ -95,8 +95,8 @@ class Actclient {
 
   Actclient csiSetModstatus(iStatus){
     modstatus = iStatus?:0
-    if(modstatus==1) Agentkreditplan.findAllByAgentkredit_idInListAndMonthAndYearAndModstatus(Agentkredit.findAllByAgentagr_id(agentagr_id).collect{it.id}?:[0],month,year,0).each{ it.topayment().save(flush:true) }
-    if(modstatus==0) Agentkreditplan.findAllByAgentkredit_idInListAndMonthAndYearAndModstatus(Agentkredit.findAllByAgentagr_id(agentagr_id).collect{it.id}?:[0],month,year,1).each{ it.revertpayment().save(flush:true) }
+    if(modstatus==1) Agentkreditplan.findAllByAgentkredit_idInListAndMonthAndYearAndModstatusAndParent(Agentkredit.findAllByAgentagr_id(agentagr_id).collect{it.id}?:[0],month,year,0,0).each{ it.topayment().save(flush:true) }
+    if(modstatus==0) Agentkreditplan.findAllByAgentkredit_idInListAndMonthAndYearAndModstatusAndParent(Agentkredit.findAllByAgentagr_id(agentagr_id).collect{it.id}?:[0],month,year,1,0).each{ it.revertpayment().save(flush:true) }
     this
   }
 

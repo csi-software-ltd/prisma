@@ -27,7 +27,7 @@ class SmrSearch {
   String client_name
   String supplier_name
 
-  def csiSelectSmrs(sClientName,sSupplierName,iCatId,iSort,iStatus,iMax,iOffset){
+  def csiSelectSmrs(sClientName,sSupplierName,iCatId,iSort,iStatus,iVision,iMax,iOffset){
     def hsSql=[select:'',from:'',where:'',order:'']
     def hsLong=[:]
     def hsString=[:]
@@ -39,7 +39,8 @@ class SmrSearch {
                 ((sSupplierName!='')?' and c2.name like concat("%",:supplier_name,"%")':'')+
                 ((iCatId>0)?' and smr.smrcat_id=:smrcat_id':'')+
                 ((iSort>0)?' and smr.smrsort=:smrsort':'')+
-                ((iStatus>-100)?' and smr.modstatus=:modstatus':'')
+                ((iStatus>-100)?' and smr.modstatus=:modstatus':'')+
+                (iVision>0?' and (if(c1.is_holding=0,0,c1.visualgroup_id)=:visualgroup_id or if(c2.is_holding=0,0,c2.visualgroup_id)=:visualgroup_id)':'')
     hsSql.order="smr.id desc"
 
     if(sClientName!='')
@@ -52,6 +53,8 @@ class SmrSearch {
       hsLong['smrsort'] = iSort
     if(iStatus>-100)
       hsLong['modstatus'] = iStatus
+    if(iVision>0)
+      hsLong['visualgroup_id'] = iVision
 
     searchService.fetchDataByPages(hsSql,null,hsLong,null,hsString,null,null,iMax,iOffset,'smr.id',true,SmrSearch.class)
   }

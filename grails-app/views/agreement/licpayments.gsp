@@ -20,7 +20,7 @@
       </g:each>
       <g:if test="${!payments}">
         <tr>
-          <td colspan="10" class="btns" style="text-align:center">
+          <td colspan="4" class="btns" style="text-align:center">
             <a class="button" href="javascript:void(0)">Платежей не найдено</a>
           </td>
         </tr>

@@ -32,9 +32,10 @@
         <tr align="left">
           <td><g:link controller="company" action="detail" id="${record.company_id}" target="_blank">${record.cname}</g:link><br/>${record.inn}</td>         
           <td>${record.bankname}<br/>${record.bank_id}<br/><i class="icon-${valutas[record.valuta_id]}"></i>&nbsp;&nbsp;&nbsp;${record.typeaccount_id==1?'расчетный':record.typeaccount_id==2?'корпоративный':record.typeaccount_id==3?'текущий':record.typeaccount_id==4?'транзитный':'накопительный'}&nbsp;&nbsp;&nbsp;${record.schet}</td>
-          <td>${intnumber(value:record.saldo)}<br/>${record?.saldodate?shortDateNoTime(date:record?.saldodate):''}</td>
-          <td><input type="text" id="actsaldo_${record.id}" value="${intnumber(value:record.actsaldo)}" style="width:120px"/></td>
-          <td><g:datepicker class="normal nopad" name="actsaldodate_${record.id}" value="${String.format('%td.%<tm.%<tY',record?.actsaldodate?:new Date()-1)}"/></td>                 
+          <td>${number(value:record.saldo)}<br/>${record?.saldodate?shortDateNoTime(date:record?.saldodate):''}</td>
+          <td><input type="text" id="actsaldo_${record.id}" value="${number(value:record.actsaldo)}" style="width:120px"/></td>
+          <td><g:datepicker class="normal nopad" name="actsaldodate_${record.id}" value="${String.format('%td.%<tm.%<tY',record?.actsaldodate?:new Date()-1)}"/></td>
+          <script type="text/javascript">jQuery("#actsaldodate_${record.id}").mask("99.99.9999",{placeholder:" "});</script>
           <td>${String.format('%td.%<tm.%<tY %<tT',record.actmoddate?:new Date()-1)}</td>
           <td align="center">
             <a class="button" href="javascript:void(0)" title="${!record.ibankblock?'Заблокировать':'Разблокировать'}" onclick="setAccountBlock(${record.id},${record.ibankblock?0:1})"><i class="icon-${record.ibankblock?'ban-circle':'minus'}"></i></a><br/>

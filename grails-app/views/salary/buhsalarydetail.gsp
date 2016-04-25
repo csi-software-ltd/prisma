@@ -6,9 +6,13 @@
       function returnToList(){
         $("returnToListForm").submit();
       }
+      function updateNetsalary(sSumma){
+        sSumma = sSumma || '0.0'
+        $('netsalary').value = (parseFloat(sSumma.replace(",",".").replace("\u00A0",""))*0.87).toFixed(2);
+      }
       function processResponse(e){
         var sErrorMsg = '';
-        ['fullsalary','debtsalary','ndfl','debtndfl','fss_tempinvalid','debtfss_tempinvalid','fss_accident','debtfss_accident','ffoms','debtffoms','pf','debtpf'].forEach(function(ids){
+        ['fullsalary','debtsalary','ndfl','debtndfl','fss_tempinvalid','debtfss_tempinvalid','fss_accident','debtfss_accident','ffoms','debtffoms','pf','debtpf','netsalary'].forEach(function(ids){
           if($(ids))
             $(ids).removeClassName('red');
         });
@@ -27,13 +31,14 @@
               case 10: sErrorMsg+='<li>${message(code:"error.incorrect.message",args:["Долг ФФОМС"])}</li>'; $('debtffoms').addClassName('red'); break;
               case 11: sErrorMsg+='<li>${message(code:"error.incorrect.message",args:["ПФ"])}</li>'; $('pf').addClassName('red'); break;
               case 12: sErrorMsg+='<li>${message(code:"error.incorrect.message",args:["Долг ПФ"])}</li>'; $('debtpf').addClassName('red'); break;
+              case 13: sErrorMsg+='<li>${message(code:"error.incorrect.message",args:["К выплате"])}</li>'; $('netsalary').addClassName('red'); break;
               case 100: sErrorMsg+='<li>${message(code:"error.bderror.message")}</li>'; break;
             }
           });
           $("errorlist").innerHTML=sErrorMsg;
           $("errorlist").up('div').show();
         } else {
-          returnToList();
+          //returnToList();
         }
       }
       function submitForm(iStatus){
@@ -61,7 +66,9 @@
 
       <g:if test="${scomp.is_pers}">
         <label for="fullsalary">Начислено:</label>
-        <input type="text" id="fullsalary" name="fullsalary" value="${number(value:scomp.fullsalary)}"/>
+        <input type="text" id="fullsalary" name="fullsalary" value="${number(value:scomp.fullsalary)}" onchange="updateNetsalary(this.value)"/>
+        <label for="netsalary">К выплате:</label>
+        <input type="text" id="netsalary" name="netsalary" value="${number(value:scomp.netsalary)}"/>
         <label for="debtsalary">Долг:</label>
         <input type="text" id="debtsalary" name="debtsalary" value="${number(value:scomp.debtsalary)}"/>
       </g:if><g:else>

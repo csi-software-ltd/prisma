@@ -1151,7 +1151,7 @@ class CatalogController {
       return
     }
 
-    hsRes.payments = new PayrequestProjectSearch().csiSelectProjectPayments(hsRes.project.id)
+    hsRes.payments = new PayrequestProjectSearch().csiSelectProjectPayments([project_id:hsRes.project.id],20,0)
 
     return hsRes
   }
@@ -2652,6 +2652,25 @@ class CatalogController {
     }
     render hsRes.result as JSON
     return
+  }
+
+  def viscompanies = {
+    checkAccess(6)
+    if (!checkSectionPermission(CVISGREDIT)) return
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 6
+
+    hsRes.visgroup = Visualgroup.get(requestService.getIntDef('id',0))
+    if (!hsRes.visgroup) {
+      render(contentType:"application/json"){[error:true]}
+      return
+    }
+
+    hsRes.companies = Company.findAllByIs_holdingAndVisualgroup_id(1,hsRes.visgroup.id)
+
+    return hsRes
   }
   //////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////Visgroup <<<//////////////////////////////////////////////////////

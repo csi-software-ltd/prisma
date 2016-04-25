@@ -16,6 +16,7 @@ class PaymentController {
   final String PPAYDEL = 'is_payrequestdelete'
   final String PPAYTAG = 'is_paytag'
   final String PPAYEDIT = 'is_payedit'
+  final String PPAYCONFIRM = 'is_payconfirm'
   final String PPAYNAL = 'is_paynalog'
   final String PPNALEDIT = 'is_paynalogedit'
   final String PTPAY = 'is_payt'
@@ -131,12 +132,13 @@ class PaymentController {
       hsRes.inrequest.paydate = requestService.getDate('paydate')
       hsRes.inrequest.modstatus = requestService.getIntDef('modstatus',-100)
       hsRes.inrequest.finstatus = requestService.getIntDef('finstatus',-1)
+      hsRes.inrequest.strsumma = requestService.getStr('summa')
       hsRes.inrequest.offset = requestService.getOffset()
       session.paymentlastRequest = hsRes.inrequest
     }
     session.paymentlastRequest.paymentobject = 7
 
-    hsRes.searchresult = new Payment().csiSelectPayment(hsRes?.inrequest,20,hsRes?.inrequest?.offset)   
+    hsRes.searchresult = new Payment().csiSelectPayment(hsRes?.inrequest,20,hsRes?.inrequest?.offset,session.user.group.visualgroup_id)   
     return hsRes
   }
 
@@ -153,6 +155,7 @@ class PaymentController {
     hsRes.inrequest.paydate = requestService.getDate('paydate')
     hsRes.inrequest.modstatus = requestService.getIntDef('modstatus',-100)
     hsRes.inrequest.finstatus = requestService.getIntDef('finstatus',-1)
+    hsRes.inrequest.strsumma = requestService.getStr('summa')
     hsRes.inrequest.offset = requestService.getOffset()
 
     hsRes.searchresult = new Payment().csiSelectPayment(hsRes?.inrequest,-1,hsRes?.inrequest?.offset)   
@@ -165,11 +168,14 @@ class PaymentController {
       }
     } else {
       def rowCounter = 4
+      hsRes.projects = Project.list().inject([0:'']){map, project -> map[project.id]=project.name;map}
+      hsRes.clients = Client.list().inject([0:'']){map, client -> map[client.id]=client.name;map}
+      hsRes.expensetypes = hsRes.searchresult.records.collect{it.expensetype_id}.unique().inject([:]){map, eId -> map[eId]=Expensetype.get(eId);map}
       new WebXlsxExporter().with {
         setResponseHeaders(response)
         putCellValue(1, 4, "Платежи по выписке")
         putCellValue(2, 4, String.format('%td.%<tm.%<tY %<tH:%<tM',new Date()))
-        fillRow(['Дата платежа','Плательщик','Банк плательщика','Получатель','Банк получателя','Сумма','Исходящий тип','Входящий тип','Признак платежа','Назначение платежа'],3,false,Tools.getXlsTableHeaderStyle(10))
+        fillRow(['Дата платежа','Плательщик','Банк плательщика','Получатель','Банк получателя','Сумма','Исходящий тип','Входящий тип','Признак платежа','Статья расхода','Подраздел расхода','Раздел расхода','Проект','Клиент','Подклиент','Назначение платежа'],3,false,Tools.getXlsTableHeaderStyle(16))
         hsRes.searchresult.records.eachWithIndex{ record, index ->
           fillRow([String.format('%td.%<tm.%<tY',record.paydate),
                    record.fromcompany,
@@ -180,7 +186,13 @@ class PaymentController {
                    record.paytype==1?'исходящий':'',
                    record.paytype==2?'входящий':'',
                    record.is_internal?'внутр.':'внеш.',
-                   record.destination], rowCounter++, false, index == 0 ? Tools.getXlsTableFirstLineStyle(10) : index == hsRes.searchresult.records.size()-1 ? Tools.getXlsTableLastLineStyle(10) : Tools.getXlsTableLineStyle(10))
+                   hsRes.expensetypes[record.expensetype_id]?.name,
+                   hsRes.expensetypes[record.expensetype_id]?.podrazdel,
+                   hsRes.expensetypes[record.expensetype_id]?.razdel,
+                   hsRes.projects[record.project_id],
+                   hsRes.clients[record.client_id],
+                   hsRes.clients[record.subclient_id],
+                   record.destination], rowCounter++, false, index == 0 ? Tools.getXlsTableFirstLineStyle(16) : index == hsRes.searchresult.records.size()-1 ? Tools.getXlsTableLastLineStyle(16) : Tools.getXlsTableLineStyle(16))
         }
         save(response.outputStream)
       }
@@ -274,6 +286,7 @@ class PaymentController {
     hsRes.ishavetask = Task.findByTasktype_idAndLink(9,hsRes.payment.id)
     hsRes.iscancreate = hsRes.payment.modstatus == 2 && hsRes.payment.payrequest_id == 0 && !(hsRes.payment.is_internal && hsRes.payment.paytype == Payment.PAY_TYPE_IMPORT) && recieveSectionPermission(PPAYEDIT)
     hsRes.iscandelete = hsRes.payrequest?.is_generate == 1 && recieveSectionPermission(PPAYEDIT)
+    hsRes.iscanselfdelete = hsRes.payment.payrequest_id == 0 && hsRes.payment.finstatus == 0 && recieveSectionPermission(PPAYEDIT)
     hsRes.iscantag = recieveSectionPermission(PPAYTAG)
 
     return hsRes
@@ -330,7 +343,7 @@ class PaymentController {
     if (!requestService.getIntDef('is_error',0))
       hsRes+=requestService.getParams(['paycat','payrequest_id','agreement_id','agreementtype_id','client_id','project_id',
                                        'is_fine','subclient_id','expensetype_id','kbkrazdel_id','agent_id','agentagr_id',
-                                       'is_dop','car_id','is_error','card','is_com','is_bankmoney','is_dopmain','is_persdop'],
+                                       'is_dop','car_id','is_error','card','is_com','is_bankmoney','is_dopmain','is_persdop','is_third'],
                                       ['pers_id'],['comment','tagcomment','destination'])
     else
       hsRes+=requestService.getParams(['is_error'],null,['fromcompany_main','frominn_main','frombank_main','frombankbik_main',
@@ -601,7 +614,6 @@ class PaymentController {
     hsRes.inrequest.for_creation = 1
     hsRes.inrequest.finstatus = requestService.getIntDef('finstatus',-1)
 
-    hsRes.searchresult = new Payment().csiSelectPayment(hsRes?.inrequest,-1,0)
     try {
       new Payment().csiSelectPayment(hsRes?.inrequest,-1,0).records.each{ payment ->
         Payment.withNewTransaction {
@@ -637,6 +649,7 @@ class PaymentController {
 
     hsRes.iscanedit = recieveSectionPermission(PPLANEDIT)
     hsRes.iscantask = recieveSectionPermission(PPLANTASK)
+    hsRes.iscanconfirm = recieveSectionPermission(PPAYCONFIRM)
 
     return hsRes
   }
@@ -653,7 +666,7 @@ class PaymentController {
       hsRes.inrequest = session.paymentlastRequest
       session.paymentlastRequest.fromDetails = 0
     } else {
-      hsRes+=requestService.getParams(['paytype','platperiod_month','platperiod_year','is_notag','pid','project_id'],null,['companyname'])
+      hsRes+=requestService.getParams(['paytype','platperiod_month','platperiod_year','is_notag','pid','project_id','is_payconfirm'],null,['companyname'])
       hsRes.inrequest.is_noclient = requestService.getIntDef('is_noclient',0)
       hsRes.inrequest.is_noinner = requestService.getIntDef('is_noinner',0)
       hsRes.inrequest.modstatus = requestService.getIntDef('modstatus',0)
@@ -664,7 +677,7 @@ class PaymentController {
     }
     session.paymentlastRequest.paymentobject = 1
 
-    hsRes.searchresult = new Payrequest().csiSelectPayrequest(hsRes?.inrequest,20,hsRes?.inrequest?.offset)
+    hsRes.searchresult = new Payrequest().csiSelectPayrequest(hsRes?.inrequest,20,hsRes?.inrequest?.offset,session.user.group.visualgroup_id)
     hsRes.taxes = Tax.list().inject([:]){map, tax -> map[tax.id]=tax.shortname;map}
     hsRes.agrtypes = Agreementtype.list().inject([:]){map, type -> map[type.id]=type.name2;map}
     hsRes.exptypes = hsRes.searchresult.records.inject([:]){map, prequest -> map[prequest.id]=Expensetype.get(prequest.expensetype_id);map}
@@ -793,10 +806,13 @@ class PaymentController {
     hsRes.clients = Client.findAllByModstatusAndParent(1,0)
     hsRes.subclients = Client.findAllByParentGreaterThanAndParentAndModstatus(0,hsRes.payrequest.client_id,1)
 
-    hsRes.iscansetrefill = hsRes.payrequest.paytype==1&&hsRes.payrequest.agreementtype_id==3&&Kredit.get(hsRes.payrequest.agreement_id)?.is_real==1
+    //temporary removed
+    //hsRes.iscansetrefill = hsRes.payrequest.paytype==1&&hsRes.payrequest.agreementtype_id==3&&Kredit.get(hsRes.payrequest.agreement_id)?.is_real==1
+
     hsRes.iscantag = recieveSectionPermission(PPAYTAG)
     hsRes.iscandecline = recieveSectionPermission(PPLANTASK)&&hsRes.payrequest.modstatus==0&&hsRes.payrequest.paycat==4
     hsRes.iscanrestore = recieveSectionPermission(PPLANTASK)&&hsRes.payrequest.modstatus==-1
+    hsRes.iscanconfirm = recieveSectionPermission(PPAYCONFIRM)
 
     return hsRes
   }
@@ -1205,8 +1221,8 @@ class PaymentController {
     }
 
     hsRes+=requestService.getParams(['project_id','expensetype_id','tax_id','agreementtype_id','agreement_id','car_id','is_task',
-                                     'is_bankmoney','is_dop','client_id','subclient_id','is_com','is_dopmain','is_persdop'],
-                                     null,['tagcomment','comment','destination'],null,['summa'])
+                                     'is_bankmoney','is_dop','client_id','subclient_id','is_com','is_dopmain','is_persdop',
+                                     'is_payconfirm'],null,['tagcomment','comment','destination'],null,['summa'])
     if (hsRes.payrequest.modstatus!=0) hsRes.inrequest.summa = hsRes.payrequest.summa
 
     if(hsRes.payrequest.modstatus==2){
@@ -1231,7 +1247,7 @@ class PaymentController {
 
     if(!hsRes.result.errorcode){
       try {
-        hsRes.payrequest.setDetailData(hsRes.inrequest).csiSetSumma(hsRes.inrequest.summa).csiSetPayrequestTag(hsRes.inrequest,recieveSectionPermission(PPAYTAG),hsRes.user.id).save(flush:true,failOnError:true)
+        hsRes.payrequest.setDetailData(hsRes.inrequest).csiSetSumma(hsRes.inrequest.summa).csiSetPayrequestTag(hsRes.inrequest,recieveSectionPermission(PPAYTAG),hsRes.user.id).csiSetPayconfirm(recieveSectionPermission(PPAYCONFIRM)?hsRes.inrequest.is_payconfirm:hsRes.payrequest.is_payconfirm).save(flush:true,failOnError:true)
         if(hsRes.payrequest.modstatus==2)
           hsRes.payrequest.csiSetFileId(imageService.rawUpload('file').fileid).save(flush:true,failOnError:true)
         if (hsRes.inrequest.is_task&&hsRes.payrequest.taskpay_id==0&&hsRes.payrequest.paytype in [1,3]){
@@ -1359,7 +1375,7 @@ class PaymentController {
     hsRes.action_id = 10
 
     def iId=requestService.getIntDef('id',0)
-    def iActsaldo=requestService.getIntDef('actsaldo',0)
+    def iActsaldo=requestService.getBigDecimalDef('actsaldo',0)
     def sActsaldodate=requestService.getDate('actsaldodate')
 
     def oBankaccount=Bankaccount.get(iId)
@@ -1451,7 +1467,7 @@ class PaymentController {
     hsRes.action_id = 10
 
     try {
-      Bankaccount.get(requestService.getIntDef('id',0))?.csiSetBanksaldo(requestService.getIntDef('banksaldo',0),requestService.getDate('banksaldodate'))?.save(flush:true,failOnError:true)
+      Bankaccount.get(requestService.getIntDef('id',0))?.csiSetBanksaldo(requestService.getBigDecimalDef('banksaldo',0),requestService.getDate('banksaldodate'))?.save(flush:true,failOnError:true)
     } catch(Exception e) {
       log.debug("Error save data in Payment/setBanksaldo\n"+e.toString())
     }
@@ -1498,7 +1514,7 @@ class PaymentController {
       hsRes.inrequest = session.paymentlastRequest
       session.paymentlastRequest.fromDetails = 0
     } else {
-      hsRes+=requestService.getParams(['client_id','is_deal','modstatus','paytype','subclient_id','clid'],null,['company_name'])
+      hsRes+=requestService.getParams(['client_id','is_deal','modstatus','paytype','subclient_id','clid','is_repayment'],null,['company_name'])
       hsRes.inrequest.is_noinner = requestService.getIntDef('is_noinner',0)
       hsRes.inrequest.paydate_start = requestService.getDate('paydate_start')
       hsRes.inrequest.paydate_end = requestService.getDate('paydate_end')
@@ -1508,7 +1524,7 @@ class PaymentController {
     session.paymentlastRequest.paymentobject = 3
 
     hsRes.searchresult = new PayrequestClientSearch().csiSelectPayments(hsRes.inrequest.client_id?:0,hsRes.inrequest.company_name?:'',
-                                                    hsRes.inrequest.is_deal?:0,hsRes.inrequest.paydate_start,hsRes.inrequest.paydate_end,
+                                                    hsRes.inrequest.is_repayment?:0,hsRes.inrequest.paydate_start,hsRes.inrequest.paydate_end,
                                                     hsRes.inrequest.modstatus?:0,0,hsRes.inrequest.paytype?:-100,hsRes.inrequest.is_noinner?:0,
                                                     hsRes.inrequest.subclient_id?:0,hsRes.inrequest.clid?:0,20,hsRes.inrequest.offset?:0)
     hsRes.iscanedit = recieveSectionPermission(PCLPAYEDIT)
@@ -1855,7 +1871,7 @@ class PaymentController {
       return
     }
 
-    hsRes.repayments = new Payrequest().csiSelectRepayments(hsRes.payrequest.client_id,hsRes.payrequest.agentagr_id)
+    hsRes.repayments = new Payrequest().csiSelectRepayments(hsRes.payrequest.client_id,hsRes.payrequest.subclient_id,hsRes.payrequest.agentagr_id)
     hsRes.iscanedit = recieveSectionPermission(PCLPAYEDIT)
 
     return hsRes
@@ -2601,18 +2617,17 @@ class PaymentController {
       hsRes.inrequest = session.paymentlastRequest
       session.paymentlastRequest.fromDetails = 0
     } else {
-      hsRes+=requestService.getParams(['project_id'])
+      hsRes+=requestService.getParams(['project_id','platperiod_month','platperiod_year'])
       hsRes.inrequest.offset = requestService.getOffset()
-      session.paymentlastRequest = hsRes.inrequest      
+      session.paymentlastRequest = hsRes.inrequest
     }
-    session.paymentlastRequest.paymentobject = 8    
+    session.paymentlastRequest.paymentobject = 8
     
-    if(hsRes.inrequest.project_id>0){
-      hsRes.project = Project.get(hsRes.inrequest.project_id)
-      hsRes.searchresult = new PayrequestProjectSearch().csiSelectProjectPayments(hsRes.project?.id)
-      hsRes.taxes = Tax.list().inject([:]){map, tax -> map[tax.id]=tax.shortname;map}
-      hsRes.agrtypes = Agreementtype.list().inject([:]){map, type -> map[type.id]=type.name2;map}
-    }
+    hsRes.project = Project.get(hsRes.inrequest.project_id)
+    hsRes.searchresult = new PayrequestProjectSearch().csiSelectProjectPayments(hsRes.inrequest,20,hsRes.inrequest.offset)
+    hsRes.taxes = Tax.list().inject([:]){map, tax -> map[tax.id]=tax.shortname;map}
+    hsRes.agrtypes = Agreementtype.list().inject([:]){map, type -> map[type.id]=type.name2;map}
+
     return hsRes
   }
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -2629,8 +2644,8 @@ class PaymentController {
     hsRes.user = User.get(session.user.id)
     hsRes.action_id = 10
 
-    if (session.sallastRequest?.fromDetails){
-      hsRes.inrequest = session.sallastRequest
+    if (session.paymentlastRequest?.fromDetails){
+      hsRes.inrequest = session.paymentlastRequest
     }
 
     hsRes.reports = Salaryreport.findAllBySalarytype_id(3,[order:'desc',sort:'repdate']).collect{[disvalue:String.format('%tY-%<tm',new Date(it.year-1900,it.month-1,1)),keyvalue:String.format('%td.%<tm.%<tY',new Date(it.year-1900,it.month-1,1))]}
@@ -2710,8 +2725,8 @@ class PaymentController {
     hsRes.user = User.get(session.user.id)
     hsRes.action_id = 10
 
-    if (session.sallastRequest?.fromDetails){
-      hsRes.inrequest = session.sallastRequest
+    if (session.paymentlastRequest?.fromDetails){
+      hsRes.inrequest = session.paymentlastRequest
     }
 
     return hsRes
@@ -2730,7 +2745,7 @@ class PaymentController {
     hsRes.incomedate = new Date(requestService.getIntDef('incomedate_year',2015)-1900,requestService.getIntDef('incomedate_month',1)-1,1)
     hsRes.offset = requestService.getOffset()
 
-    hsRes.searchresult = new CashSearch().csiSelectDCReturn(hsRes.incomedate,20,hsRes.offset)
+    hsRes.searchresult = new CashSearch().csiSelectDCReturn(null,20,hsRes.offset,requestService.getIntDef('incomedate_year',0),requestService.getIntDef('incomedate_month',0))
 
     return hsRes
   }
@@ -2743,8 +2758,8 @@ class PaymentController {
     hsRes.user = User.get(session.user.id)
     hsRes.action_id = 10
 
-    if (session.sallastRequest?.fromDetails){
-      hsRes.inrequest = session.sallastRequest
+    if (session.paymentlastRequest?.fromDetails){
+      hsRes.inrequest = session.paymentlastRequest
     }
 
     return hsRes
@@ -2758,10 +2773,17 @@ class PaymentController {
     hsRes.user = User.get(session.user.id)
     hsRes.action_id = 10
 
-    session.paymentlastRequest = [:]
+    if (session.paymentlastRequest?.fromDetails?:0) {
+      hsRes.inrequest = session.paymentlastRequest
+      session.paymentlastRequest.fromDetails = 0
+    } else {
+      hsRes+=requestService.getParams(['comissiondate_month','comissiondate_year'])
+      hsRes.inrequest.offset = requestService.getOffset()
+      session.paymentlastRequest = hsRes.inrequest
+    }
     session.paymentlastRequest.paymentobject = 11
 
-    hsRes.searchresult = new Payrequest().csiSelectPayrequest([platperiod_month:requestService.getIntDef('comissiondate_month',1),platperiod_year:requestService.getIntDef('comissiondate_year',2015),paytype:9],20,requestService.getOffset())
+    hsRes.searchresult = new Payrequest().csiSelectPayrequest([platperiod_month:hsRes.inrequest.comissiondate_month,platperiod_year:hsRes.inrequest.comissiondate_year,paytype:9],20,requestService.getOffset())
 
     return hsRes
   }

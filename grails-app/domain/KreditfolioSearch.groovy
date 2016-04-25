@@ -75,7 +75,7 @@ class KreditfolioSearch {
                 (iActStatus in [1,2,5,8]?' and company.activitystatus_id=:actstatus':iActStatus==3?' and company.activitystatus_id in (3,4)':iActStatus==6?' and company.activitystatus_id in (6,7)':iActStatus==9?' and company.activitystatus_id in (9,10)':'')+
                 ((iZalogId>-100)?' and kredit.zalogstatus=2':'')+
                 ((iZalogId>0)?' and (select count(*) from kreditzalog where kreditzalog.kredit_id=kredit.id and kreditzalog.zalogtype_id=:zalogtype) > 0':'')+
-                (dKreditfolioDate?' and ifnull(kreditdopagr.startdate,kredit.startdate)<=:maindate and ifnull(kreditdopagr.enddate,kredit.enddate)>=:maindate':'')+
+                (dKreditfolioDate?' and ((ifnull(kreditdopagr.startdate,kredit.startdate)<=:maindate and ifnull(kreditdopagr.enddate,kredit.enddate)>=:maindate) or (kredit.debt>0 and ifnull(kreditdopagr.enddate,kredit.enddate)<=:maindate))':'')+
                 (dDateStart?' and ifnull(kreditdopagr.enddate,kredit.enddate)>=:startdate':'')+
                 (dDateEnd?' and ifnull(kreditdopagr.enddate,kredit.enddate)<=:enddate':'')
     hsSql.order="company.name asc"
@@ -132,7 +132,7 @@ class KreditfolioSearch {
     else kredsumma = (startsaldodate?startsumma:0)+(Kreditline.findAllByKredit_idAndModstatusGreaterThanEqualsAndPaydateLessThanEqualsAndPaydateGreaterThanEquals(id,0,_date,startsaldodate?:new Date(1,0,1)).sum{it.summa}?:0)
 
     if (kredtype==3) paid = Payrequest.findAllByAgreementtype_idAndAgreement_idAndIs_dopAndPaytypeAndPaydateLessThanEqualsAndModstatusGreaterThanAndPaydateGreaterThanEquals(3,id,0,2,_date,-1,startsaldodate?:new Date(1,0,1)).sum{it.summa}?:0
-    else paid = Kreditpayment.findAllByKredit_idAndModstatusGreaterThanEqualsAndPaydateLessThanEqualsAndPaydateGreaterThanEquals(id,0,_date,startsaldodate?:new Date(1,0,1)).sum{it.summa}?:0
+    else paid = Kreditpayment.findAllByKredit_idAndModstatusGreaterThanEqualsAndPaydateLessThanEqualsAndPaydateGreaterThanEquals(id,0,_date,startsaldodate?:new Date(1,0,1)).sum{it.paid/it.rate}?:0
     kredsumma - paid
   }
 }

@@ -20,9 +20,9 @@
   <g:select name="client_id" value="${inrequest?.client_id}" from="${clients}" optionKey="id" optionValue="name" noSelection="${['0':'все']}" onchange="getSubclientsList(this.value)"/>
   <label for="subclient_id">Подклиент:</label>
   <span id="subclientslist"><g:select name="subclient_id" value="${inrequest?.subclient_id}" from="${subclients}" optionKey="id" optionValue="name" noSelection="${['0':'нет']}" onchange="togglesubcomsection(this.value)"/></span>
-  <label class="auto" for="is_deal">
-    <input type="checkbox" id="is_deal" name="is_deal" value="1" <g:if test="${inrequest?.is_deal}">checked</g:if> />
-    Без сделок
+  <label class="auto" for="is_repayment">
+    <input type="checkbox" id="is_repayment" name="is_repayment" value="1" <g:if test="${inrequest?.is_repayment}">checked</g:if> />
+    Со списаниями
   </label>
   <div class="fright">
   <g:if test="${iscancreatetask}">

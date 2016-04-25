@@ -15,24 +15,6 @@
         }
         $("infolist").innerHTML=sDescText;
       }
-      function processResponse(e){
-        var sErrorMsg = '';
-        ['qtext'].forEach(function(ids){
-          if($(ids))
-            $(ids).removeClassName('red');
-        });
-        if(e.responseJSON.errorcode.length){
-          e.responseJSON.errorcode.forEach(function(err){
-            switch (err) {
-              case 1: sErrorMsg+='<li>${message(code:"error.blank.message",args:["Текст вопроса"])}</li>'; $('qtext').addClassName('red'); break;
-              case 100: sErrorMsg+='<li>${message(code:"error.bderror.message")}</li>'; break;
-            }
-          });
-          $("errorlist").innerHTML=sErrorMsg;
-          $("errorlist").up('div').show();
-        } else
-          returnToList();
-      }
     </g:javascript>
     <style type="text/css">
       label{min-width:160px}
@@ -43,7 +25,7 @@
     <h3 class="fleft">Новый вопрос</h3>
     <a class="button back fright" href="javascript:void(0)" onclick="returnToList();"><i class="icon-angle-left icon-large"></i>&nbsp; К списку вопросов</a>
     <div class="clear"></div>
-    <g:formRemote name="newquestionForm" url="${[action:'incertquestion']}" method="post" onSuccess="processResponse(e)">
+    <g:form name="newquestionForm" url="${[action:'incertquestion']}" method="post" enctype="multipart/form-data" target="upload_target">
 
       <div class="error-box" style="display:none">
         <span class="icon icon-warning-sign icon-3x"></span>
@@ -63,13 +45,17 @@
 
       <label for="qtext">Текст вопроса:</label>
       <g:textArea id="qtext" name="qtext" rows="6" value="" />
+      <label for="file">Загрузить файл:</label>
+      <input type="file" id="file" name="file" style="width:256px"/>
+
       <hr class="admin" />
 
       <div class="fright" id="btns" style="padding-top:10px">
         <input type="reset" class="spacing" value="Отменить" onclick="returnToList()" />
         <input type="submit" class="spacing" value="Задать"/>
       </div>
-    </g:formRemote>
+    </g:form>
+    <iframe id="upload_target" name="upload_target" style="display:none"></iframe>
     <g:form  id="returnToListForm" name="returnToListForm" url="${[controller:controllerName,action:'index',params:[fromDetails:1]]}">
     </g:form>
   </body>

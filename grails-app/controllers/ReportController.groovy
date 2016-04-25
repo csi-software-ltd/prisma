@@ -2663,7 +2663,7 @@ class ReportController {
       hsRes.searchresult.records.each{ record ->
         hsRes.summas.actsalary += record.actsalary
         hsRes.summas.prepayment += record.prepayment
-        hsRes.summas.offsalary += record.offsalary
+        hsRes.summas.offsalary += record.sc_netsalary?:0
         hsRes.summas.prevfix += record.prevfix
         hsRes.summas.bonus += record.bonus
         hsRes.summas.shtraf += record.shtraf
@@ -2684,7 +2684,7 @@ class ReportController {
                    record.p_shortname,
                    record.actsalary,
                    record.prepayment,
-                   record.offsalary,
+                   record.sc_netsalary?:0,
                    record.prevfix,
                    record.bonus,
                    record.shtraf,
@@ -2925,5 +2925,85 @@ class ReportController {
   }
   //////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////Paytaskhand <<<///////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////Paccount >>>//////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////
+
+  def persaccountfilter = {
+    checkAccess(12)
+    if(!checkSectionAccess(1)) return
+    if(!checkSubSectionAccess(34)) return
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 12
+
+    return hsRes
+  }
+
+  def persaccount = {
+    checkAccess(12)
+    if(!checkSectionAccess(1)) return
+    if(!checkSubSectionAccess(34)) return
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 12
+
+    hsRes+=requestService.getParams(['is_main','modstatus','sort'],null,['pers_name','bankname','paccount'])
+
+    hsRes.report = new PersaccountSearch().csiSelectPaccounts(hsRes.inrequest,requestService.getStr('viewtype')!='table'?-1:20,requestService.getOffset())
+
+    if (requestService.getStr('viewtype')!='table') {
+      renderPdf(template: 'persaccount', model: hsRes, filename: "persaccount.pdf")
+      return
+    }
+
+    return hsRes
+  }
+
+  def persaccountXLS = {
+    checkAccess(12)
+    if(!checkSectionAccess(1)) return
+    if(!checkSubSectionAccess(34)) return
+    requestService.init(this)
+    def hsRes = requestService.getContextAndDictionary(true)
+    hsRes.user = User.get(session.user.id)
+    hsRes.action_id = 12
+
+    hsRes+=requestService.getParams(['is_main','modstatus','sort'],null,['pers_name','bankname','paccount'])
+
+    hsRes.report = new PersaccountSearch().csiSelectPaccounts(hsRes.inrequest,-1,0)
+
+    if (hsRes.report.records.size()==0) {
+      new WebXlsxExporter().with {
+        setResponseHeaders(response)
+        putCellValue(0, 4, "Нет данных")
+        save(response.outputStream)
+      }
+    } else {
+      def rowCounter = 4
+      new WebXlsxExporter().with {
+        setResponseHeaders(response)
+        putCellValue(1, 2, "Реестр персональных карт")
+        putCellValue(2, 2, String.format('%td.%<tm.%<tY %<tH:%<tM',new Date()))
+        fillRow(['ФИО','БИК','Банк','Номер счета','Тип','Срок действия','Статус'],3,false,Tools.getXlsTableHeaderStyle(7))
+        hsRes.report.records.eachWithIndex{ record, index ->
+          fillRow([record.shortname,
+                   record.bank_id,
+                   record.name,
+                   record.paccount,
+                   record.is_main?'Основная':'Дополнительная',
+                   "${record?.validmonth}/${record?.validyear}".toString(),
+                   record.modstatus?'Активная':'Неактивная'], rowCounter++, false, index == 0 ? Tools.getXlsTableFirstLineStyle(7) : index == hsRes.report.records.size()-1 ? Tools.getXlsTableLastLineStyle(7) : Tools.getXlsTableLineStyle(7))
+        }
+        save(response.outputStream)
+      }
+    }
+    return
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////Paccount >>>//////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////
 }

@@ -2,6 +2,8 @@
 <input type="text" class="mini" id="agentrateperiod_calcrate" name="calcrate" value="${number(value:agentrateperiod.calcrate)}"/>
 <label for="agentrateperiod_calccost">Себестоимость по периоду:</label>
 <input type="text" class="mini" id="agentrateperiod_calccost" name="calccost" value="${number(value:agentrateperiod.calccost)}"/>
+<label class="auto" for="agentrateperiod_vrate">Курс:</label>
+<input type="text" class="mini" id="agentrateperiod_vrate" name="vrate" value="${number(value:agentrateperiod.vrate)}" />
 <hr class="admin" />
 <ul id="agentrateslist">
 <g:each in="${agentrates}" var="agentrate">

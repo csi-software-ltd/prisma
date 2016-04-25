@@ -28,13 +28,32 @@
         } else
           returnToList();
       }
+      function viewCell(iNum){
+        var tabs = jQuery('.nav').find('li');
+        for(var i=0; i<tabs.length; i++){
+          if(i==iNum)
+            tabs[i].addClassName('selected');
+          else
+            tabs[i].removeClassName('selected');
+        }
+
+        switch(iNum){
+          case 0: getCompanies();break;
+        }
+      }
+      function getCompanies(){
+        if(${visgroup?1:0}) $('viscompanies_submit_button').click();
+      }
+      function init(){
+        jQuery('.nav').find('li:visible > a:first').click();
+      }
     </g:javascript>
     <style type="text/css">
       label{min-width:160px}
       input.normal{width:202px}
     </style>
   </head>
-  <body>
+  <body onload="init()">
     <h3 class="fleft"><g:if test="${visgroup}">Группа видимости компаний "${visgroup.name}"</g:if><g:else>Новая группа видимости компаний</g:else></h3>
     <a class="button back fright" href="javascript:void(0)" onclick="returnToList();"><i class="icon-angle-left icon-large"></i>&nbsp; К списку </a>
     <div class="clear"></div>
@@ -58,6 +77,21 @@
       </div>
     </g:formRemote>
     <div class="clear"></div>
+  <g:if test="${visgroup}">
+    <div class="tabs">
+      <ul class="nav">
+        <li><a href="javascript:void(0)" onclick="viewCell(0)">Компании</a></li>
+      </ul>
+      <div class="tab-content">
+        <div class="inner">
+          <div id="details"></div>
+        </div>
+      </div>
+    </div>
+    <g:formRemote name="viscompaniesForm" url="[action:'viscompanies',id:visgroup.id]" update="details">
+      <input type="submit" class="button" id="viscompanies_submit_button" value="Показать" style="display:none" />
+    </g:formRemote>
+  </g:if>
     <g:form  id="returnToListForm" name="returnToListForm" url="${[controller:controllerName,action:'index',params:[fromDetails:1]]}">
     </g:form>
   </body>

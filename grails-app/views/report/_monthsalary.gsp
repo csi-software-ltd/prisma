@@ -54,7 +54,7 @@
           <td>${record.p_shortname}</td>
           <td>${number(value:record.actsalary)}</td>
           <td>${intnumber(value:record.prepayment)}</td>
-          <td>${number(value:record.offsalary)}</td>
+          <td>${number(value:record.sc_netsalary?:0)}</td>
           <td>${number(value:record.prevfix)}</td>
           <td>${intnumber(value:record.bonus)}</td>
           <td>${intnumber(value:record.shtraf)}</td>
@@ -70,13 +70,13 @@
           <g:if test="${record.prepaydate}"><br/>${String.format('%td.%<tm.%<tY',record.prepaydate)}</g:if>
           </td>
           <td>
-          <g:if test="${record.offstatus==2}">Да"><i class="icon-ok"></i></abbr></g:if>
+          <g:if test="${record.offstatus==2}">Да</g:if>
           <g:elseif test="${record.offstatus==1}">Начислено</g:elseif>
           <g:else>Нет</g:else>
           <g:if test="${record.offdate}"><br/>${String.format('%td.%<tm.%<tY',record.offdate)}</g:if>
           </td>
           <td>
-          <g:if test="${record.cashstatus==2}">Да"><i class="icon-ok"></i></abbr></g:if>
+          <g:if test="${record.cashstatus==2}">Да</g:if>
           <g:elseif test="${record.cashstatus==1}">Начислено</g:elseif>
           <g:else>Нет</g:else>
           <g:if test="${record.cashdate}"><br/>${String.format('%td.%<tm.%<tY',record.cashdate)}</g:if>

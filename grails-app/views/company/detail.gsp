@@ -56,6 +56,9 @@
       function newPers(){
         window.open('${createLink(controller:'user',action:'persdetail')}');
       }
+      function newCompany(){
+        window.open('${createLink(controller:'company',action:'detail')}');
+      }
       function copyadr(sAdr){
         if(!$("postadr").value) $("postadr").value = sAdr;
       }
@@ -530,7 +533,7 @@
       <label for="okvedmain" disabled>ОКВЭД:</label>
       <input type="text" id="okvedmain" disabled value="${company?.okvedmain}" />
       <label for="taxinspection_id">Налоговая:</label>
-      <g:select name="taxinspection_id" value="${company?.taxinspection_id?:0}" from="${Taxinspection.list()}" optionKey="id" optionValue="id"/>
+      <g:select name="taxinspection_id" value="${company?.taxinspection_id?:0}" from="${Taxinspection.list()}" optionKey="id" />
       <label for="legaladr">Юридич. адрес:</label>
       <input type="text" class="fullline" id="legaladr" name="legaladr" value="${company?.legaladr}" onblur="copyadr(this.value)"/>
       <label for="taxoption_id">Тип налогов:</label>

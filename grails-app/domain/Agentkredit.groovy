@@ -9,11 +9,18 @@ class Agentkredit {
   Integer id
   Integer agentagr_id
   Integer kredit_id
+  Integer agentperiod_id
   Float rate
   Float cost
   Integer payterm
   Integer calcperiod
   Date calcdate
+
+  Agentkredit csiSetKreditPeriod(Agentperiod _period){
+    kredit_id = _period?.kredit_id?:0
+    agentperiod_id = _period?.id?:0
+    this
+  }
 
   Agentkredit setData(_request){
     rate = _request.rate?_request.rate.toFloat():0f

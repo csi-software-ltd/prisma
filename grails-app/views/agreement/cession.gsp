@@ -29,9 +29,11 @@
         if(!e.responseJSON.error){
           $('cedent').value = e.responseJSON.cedent;
           $('debtor').value = e.responseJSON.debtor;
+          $('client_id').value = e.responseJSON.client_id!=0 ? e.responseJSON.client_id : -1;
         } else {
           $('cedent').value = "";
           $('debtor').value = "";
+          $('client_id').selectedIndex=0;
         }
       }
       function processLizingResponse(e){
@@ -191,6 +193,8 @@
       <input type="text" class="fullline" id="cedent" disabled value="${cedent}"/>
       <label for="debtor">Должник:</label>
       <input type="text" class="fullline" id="debtor" disabled name="debtor" value="${debtor}"/>
+      <label for="client_id">Клиент:</label>
+      <g:select name="client_id" value="${cession?.client_id}" from="${clients}" optionValue="name" optionKey="id" noSelection="${['-1':'не выбрано']}" disabled="${cession?true:false}"/>
 
       <hr class="admin" /></div>
       <div id="lizingagrsection" style="${cession?.cessionvariant!=2?'display:none':''}"><label for="lizing_id" style="margin-right:5px">Лизинговый договор</label>

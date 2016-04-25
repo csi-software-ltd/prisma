@@ -155,6 +155,25 @@
         } else
           jQuery('#periodUpdateForm').slideUp(300, function() { getPeriods(); });
       }
+      function processupdateaddperiodResponse(e){
+        var sErrorMsg = '';
+        ['agentaddperiod_period_id','agentaddperiod_calcrate'].forEach(function(ids){
+          if($(ids))
+            $(ids).removeClassName('red');
+        });
+        if(e.responseJSON.errorcode.length){
+          e.responseJSON.errorcode.forEach(function(err){
+            switch (err) {
+              case 1: sErrorMsg+='<li>${message(code:"error.incorrect.message",args:["Общий процент по периоду"])}</li>'; $('agentaddperiod_calcrate').addClassName('red'); break;
+              case 2: sErrorMsg+='<li>${message(code:"error.blank.message",args:["Период"])}</li>'; $('agentaddperiod_period_id').addClassName('red'); break;
+              case 100: sErrorMsg+='<li>${message(code:"error.bderror.message")}</li>'; break;
+            }
+          });
+          $("erroraddperiodlist").innerHTML=sErrorMsg;
+          $("erroraddperiodlist").up('div').show();
+        } else
+          jQuery('#addperiodUpdateForm').slideUp(300, function() { getPeriods(); });
+      }
       function processaddfixResponse(e){
         var sErrorMsg = '';
         ['agentfix_agent_id','agentfix_summa'].forEach(function(ids){

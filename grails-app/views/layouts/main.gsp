@@ -77,6 +77,7 @@
             <g:if test="${item.controller=='company'}">
               <li><g:link controller="${item.controller}" action="${item.action}">Холдинг</g:link></li>
               <li><g:link controller="${item.controller}" action="${item.action}" params="[is_holding:2]">Внешние</g:link></li>
+              <li><g:link controller="${item.controller}" action="${item.action}" params="[is_inactive:1]">Архив</g:link></li>
             </g:if><g:elseif test="${item.controller=='cash'}">
             <g:if test="${!(session.user.cashaccess in [2,3,5,7])}">
               <li><g:link controller="${item.controller}" action="${item.action}">Мои операции</g:link></li>

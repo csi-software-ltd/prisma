@@ -10,7 +10,7 @@
   <label class="auto" for="modstatus">Статус:</label>
   <g:select class="mini" name="modstatus" value="${inrequest?.modstatus}" from="['новый', 'в задании', 'выполнен', 'подтвержден']" keys="${0..3}" noSelection="${['-100':'все']}"/>
   <label class="auto" for="platperiod_month">Период:</label>
-  <g:datePicker class="auto" name="platperiod" precision="month" value="${inrequest?.platperiod?:new Date()}" relativeYears="[114-new Date().getYear()..0]"/>
+  <g:datePicker class="auto" name="platperiod" precision="month" value="${inrequest?.platperiod_month&&inrequest?.platperiod_year?new Date(inrequest.platperiod_year-1900,inrequest.platperiod_month-1,1):inrequest?.platperiod_year?new Date(inrequest.platperiod_year-1900,0,1):new Date()}" relativeYears="[114-new Date().getYear()..0]" noSelection="${['':'все']}"/>
   <div class="fright">
     <input type="button" class="reset spacing" value="Сброс" onclick="resetbudgfilter()"/>
     <input type="submit" id="form_submit_button" value="Показать"/>
@@ -25,5 +25,6 @@
     serviceUrl:'${resource(dir:"autocomplete",file:"companyname_autocomplete")}'
   });
   jQuery("#paydate").mask("99.99.9999",{placeholder:" "});
+  $('platperiod_month').selectedIndex = 0;
   $('form_submit_button').click();
 </script>

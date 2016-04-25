@@ -4,10 +4,15 @@
 </style>
 <div id="ajax_wrap">
   <div style="padding:10px">
-    <div class="fleft">Найдено: ${searchresult.size()}</div>
+    <div class="fleft">Найдено: ${searchresult.count}</div>
+    <div class="fright">
+      <g:paginate controller="${controllerName}" action="${actionName}" params="${params}" 
+        prev="&lt;" next="&gt;" max="20" total="${searchresult.count}" offset="${inrequest.offset}"/>
+      <g:observe classes="${['step','prevLink','nextLink']}" event="click" function="clickPaginate"/>
+    </div>
     <div class="clear"></div>
   </div>
-<g:if test="${searchresult}">
+<g:if test="${searchresult.count}">
   <div id="resultList">
     <table class="list" width="100%" cellpadding="0" cellspacing="0" border="0">
       <thead>
@@ -25,7 +30,7 @@
         </tr>
       </thead>
       <tbody>
-      <g:each in="${searchresult}" status="i" var="record">
+      <g:each in="${searchresult.records}" status="i" var="record">
         <tr align="center" class="${record.is_bankmoney?'disabled':''}" id="tr_${record?.id}">
           <td><input type="checkbox" id="checkbox${i}" value="${record.id}"/></td>
           <td>${record.paydate?String.format('%td.%<tm.%<tY',record.paydate):''}<br/>${record.execdate?String.format('%td.%<tm.%<tY',record.execdate):''}</td>
@@ -49,7 +54,12 @@
     </table>
   </div>
   <div style="padding:10px">
-    <span class="fleft">Найдено: ${searchresult.size()}</span>
+    <span class="fleft">Найдено: ${searchresult.count}</span>
+    <div class="fright">
+      <g:paginate controller="${controllerName}" action="${actionName}" params="${params}" 
+        prev="&lt;" next="&gt;" max="20" total="${searchresult.count}" offset="${inrequest.offset}"/>
+      <g:observe classes="${['step','prevLink','nextLink']}" event="click" function="clickPaginate"/>
+    </div>
   </div>
 </g:if>
 </div>

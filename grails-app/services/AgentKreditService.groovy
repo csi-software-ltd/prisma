@@ -6,30 +6,32 @@ class AgentKreditService {
     def enddate = Calendar.getInstance()
     def startdate = Calendar.getInstance()
     Agentkredit.findAllByAgentagr_id(agr_id).each{ akr ->
-      def query = new DetachedCriteria(Agentkreditplan).build { eq('agentkredit_id',akr.id) or { lt('year',baseDate.getYear()+1900) le('month',baseDate.getMonth()+1) } }
+      def query = new DetachedCriteria(Agentkreditplan).build { eq('agentkredit_id',akr.id) eq('parent',0) or { lt('year',baseDate.getYear()+1900) le('month',baseDate.getMonth()+1) } }
       def lastperiod = query.list(sort:'dateend',order:'desc',max:1)[0]
-      startdate.setTime(lastperiod?.dateend?lastperiod?.dateend+1:Kredit.get(akr.kredit_id).startdate.clone())
-      maxenddate.setTime(baseDate.clearTime())
-      maxenddate.add(Calendar.MONTH,akr.calcperiod==0?1:akr.calcperiod==1?-1:akr.calcperiod==2?3:0)
       Kredit kredit = Kredit.get(akr.kredit_id)
-      if(maxenddate.getTime()>=kredit.enddate) maxenddate.setTime(kredit.enddate)
+      Agentperiod period = Agentperiod.get(akr.agentperiod_id)
+      startdate.setTime(lastperiod?.dateend?lastperiod?.dateend+1:period.startdate.clone())
+      maxenddate.setTime(baseDate.clearTime())
+      Integer computed_calcperiod = lastperiod?lastperiod.calcperiod:akr.calcperiod
+      maxenddate.add(Calendar.MONTH,computed_calcperiod==0?1:computed_calcperiod==1?-1:computed_calcperiod==2?3:0)
+      if(maxenddate.getTime()>=period.enddate) maxenddate.setTime(period.enddate)
       if(lastperiod?.isSameDate(baseDate)||startdate.getTime()>=maxenddate.getTime()){
-        if (lastperiod?.modstatus==0) lastperiod?.calculateSum(startdate,Agentkreditplan.createCriteria().list(sort:'dateend',order:'desc') { eq('agentkredit_id',akr.id) ne('id',lastperiod.id) or { lt('year',lastperiod.year) le('month',lastperiod.month) } }.sum{ it.recalculatePeriod(maxenddate) }?:0g)?.save(failOnError:true)
+        if (lastperiod?.modstatus==0) lastperiod?.calculateSum(startdate,Agentkreditplan.createCriteria().list(sort:'dateend',order:'desc') { eq('agentkredit_id',akr.id) eq('parent',0) ne('id',lastperiod.id) or { lt('year',lastperiod.year) le('month',lastperiod.month) } }.sum{ it.recalculatePeriod(maxenddate) }?:0g)?.save(failOnError:true)
       } else {
-        if (akr.calcperiod==3) {
+        if (computed_calcperiod==3) {
           enddate.setTime(baseDate.clearTime())
           enddate.set(Calendar.DAY_OF_MONTH,enddate.getActualMaximum(Calendar.DAY_OF_MONTH))
         } else {
           if(!lastperiod) enddate.setTime(maxenddate.getTime())
           else {
             enddate.setTime(startdate.getTime())
-            enddate.add(Calendar.MONTH,akr.calcperiod==0?1:akr.calcperiod==1?-1:3)
+            enddate.add(Calendar.MONTH,computed_calcperiod==0?1:computed_calcperiod==1?-1:3)
             enddate.add(Calendar.DATE,-1)
           }
         }
-        if(enddate.getTime()>kredit.enddate) enddate.setTime(kredit.enddate)
+        if(enddate.getTime()>period.enddate) enddate.setTime(period.enddate)
         lastperiod?.closePeriod()?.save(failOnError:true)
-        akr.updateCalcdate(new Agentkreditplan(agentkredit_id:akr.id,vrate:kredit.getvRate(),calcrate:lastperiod?lastperiod.calcrate:akr.rate,calccost:lastperiod?lastperiod.calccost:akr.cost).bindPeriod(baseDate).setDates(startdate.getTime(),enddate.getTime()).calculateSum(startdate,query.list(sort:'dateend',order:'desc').sum{ it.recalculatePeriod(maxenddate) }?:0g).save(failOnError:true)?.dateend).save(failOnError:true)
+        akr.updateCalcdate(new Agentkreditplan(agentkredit_id:akr.id,vrate:kredit.getvRate(),calcrate:lastperiod?lastperiod.calcrate:akr.rate,calccost:lastperiod?lastperiod.calccost:akr.cost,payterm:lastperiod?lastperiod.payterm:akr.payterm,calcperiod:computed_calcperiod).bindPeriod(baseDate).setDates(startdate.getTime(),enddate.getTime()).calculateSum(startdate,query.list(sort:'dateend',order:'desc').sum{ it.recalculatePeriod(maxenddate) }?:0g).save(failOnError:true)?.dateend).save(failOnError:true)
       }
     }
   }
@@ -40,13 +42,19 @@ class AgentKreditService {
     Agentkredit.findAllByAgentagr_id(agr_id).each{ akr ->
       def query = new DetachedCriteria(Agentratekreditplan).build { eq('agentkredit_id',akr.id) or { lt('year',baseDate.getYear()+1900) le('month',baseDate.getMonth()+1) } }
       def lastperiod = query.list(sort:'id',order:'desc',max:1)[0]
-      startdate.setTime(lastperiod?.dateend?lastperiod?.dateend+1:Kredit.get(akr.kredit_id).startdate.clone())
+      Kredit kredit = Kredit.get(akr.kredit_id)
+      Agentperiod period = Agentperiod.get(akr.agentperiod_id)
+      startdate.setTime(lastperiod?.dateend?lastperiod?.dateend+1:period.startdate.clone())
       enddate.setTime(baseDate.clearTime())
       enddate.set(Calendar.DAY_OF_MONTH,enddate.getActualMaximum(Calendar.DAY_OF_MONTH))
-      Kredit kredit = Kredit.get(akr.kredit_id)
-      if(enddate.getTime()>kredit.enddate) enddate.setTime(kredit.enddate)
+      if(enddate.getTime()>period.enddate) enddate.setTime(period.enddate)
       if(lastperiod?.isSameDate(baseDate)||startdate.getTime()>=enddate.getTime()){
-        if (lastperiod?.modstatus==0) lastperiod?.calculateSum(startdate,Agentratekreditplan.createCriteria().list(sort:'dateend',order:'desc') { eq('agentkredit_id',akr.id) ne('id',lastperiod.id) or { lt('year',baseDate.getYear()+1900) le('month',baseDate.getMonth()+1) } }.sum{ it.recalculatePeriod(startdate) }?:0g)?.save(failOnError:true,flush:true)
+        if (lastperiod?.modstatus==0){
+          lastperiod.calculateSum(startdate,Agentratekreditplan.createCriteria().list(sort:'dateend',order:'desc') { eq('agentkredit_id',akr.id) ne('id',lastperiod.id) or { lt('year',baseDate.getYear()+1900) le('month',baseDate.getMonth()+1) } }.sum{ it.recalculatePeriod(startdate) }?:0g)?.save(failOnError:true,flush:true)
+          Agentrate.findAllByAgentkredit_id(akr.id).each{ arate ->
+            Agentrateforperiods.findOrCreateWhere(agentkredit_id:akr.id,agent_id:arate.agent_id,agentratekreditplan_id:lastperiod.id).setMainData(arate.properties).save(failOnError:true)
+          }
+        }
       } else {
         lastperiod?.closePeriod()?.save(failOnError:true)
         def akrplan = new Agentratekreditplan(agentkredit_id:akr.id,vrate:kredit.getvRate(),calcrate:lastperiod?lastperiod.calcrate:akr.rate,calccost:lastperiod?lastperiod.calccost:akr.cost).bindPeriod(baseDate).setDates(startdate.getTime(),enddate.getTime()).calculateSum(startdate,query.list(sort:'dateend',order:'desc').sum{ it.recalculatePeriod(startdate) }?:0g).save(failOnError:true,flush:true)

@@ -101,7 +101,7 @@ def searchService
   Salarycomp updatePersBuhData(_request){
     if(is_pers){
       fullsalary = _request.fullsalary?:0.0g
-      netsalary = fullsalary * 0.87
+      netsalary = _request.netsalary?:0.0g
       debtsalary = _request.debtsalary?:0.0g
     }
     this
@@ -162,8 +162,15 @@ def searchService
     this
   }
 
+  private void clearcards(){
+    cardmain = 0
+    cardadd = 0
+    cashsalary = 0
+  }
+
   Salarycomp csiUpdateDirectorsCardsSumma(_summa) {
     is_noaccount = Bankaccount.findAllByCompany_idAndModstatusAndTypeaccount_id(company_id,1,1).find{it.ibankstatus==1}?0:1
+    clearcards()
     if(!is_noaccount){
       paidmainstatus = Persaccount.findByPers_idAndModstatusAndIs_mainAndBank_idNotEqual(pers_id,1,1,'000000000')?0:-1
       paidaddstatus = Persaccount.findByPers_idAndModstatusAndIs_mainAndBank_idNotEqual(pers_id,1,0,'000000000')?0:-1

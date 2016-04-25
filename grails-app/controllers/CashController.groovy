@@ -1166,7 +1166,7 @@ class CashController {
     }
 
     hsRes.departments = session.user.cashaccess==2?Department.findAllByIdOrParent(hsRes.user.department_id,hsRes.user.department_id,[sort:'name',order:'asc'])+(hsRes.user.is_tehdirleader?[Department.findByIs_tehdir(1)]:[]):Department.list(sort:'name',order:'asc')
-    hsRes.perslist = (User.findAllByCashaccessGreaterThanAndDepartment_idAndModstatus(session.user.cashaccess==2?-1:hsRes.cashrecord?.department_id?-1:0,session.user.cashaccess==2?hsRes.user.department_id:hsRes.cashrecord?.department_id?:0,1)+(Department.get(hsRes.user.department_id)?.is_cashextstaff?User.findAllByModstatusAndCashaccessAndUsergroup_idNotEqualAndDepartment_idNotEqual(1,0,1,session.user.cashaccess==2?hsRes.user.department_id:hsRes.cashrecord?.department_id?:0):[])).sort{it.name}
+    hsRes.perslist = (User.findAllByCashaccessGreaterThanAndDepartment_idInListAndModstatus(session.user.cashaccess==2?-1:hsRes.cashrecord?.department_id?-1:0,Department.findAllByIdOrParent(session.user.cashaccess==2?hsRes.user.department_id:hsRes.cashrecord?.department_id?:0,session.user.cashaccess==2?hsRes.user.department_id:hsRes.cashrecord?.department_id?:-1).collect{it.id}?:[],1)+(Department.get(hsRes.user.department_id)?.is_cashextstaff?User.findAllByModstatusAndCashaccessAndUsergroup_idNotEqualAndDepartment_idNotEqual(1,0,1,session.user.cashaccess==2?hsRes.user.department_id:hsRes.cashrecord?.department_id?:0):[])).sort{it.name}
     hsRes.iscanedit = !hsRes.cashrecord&&session.user.cashaccess==2
 
     return hsRes
@@ -1179,7 +1179,7 @@ class CashController {
 
     def oDepartment = Department.get(requestService.getIntDef('department_id',0))
 
-    return [perslist:oDepartment?.is_tehdir?User.findAllByDepartment_idAndModstatusAndPers_idInList(0,1,Pers.findAllByPerstype(2).collect{it.id},[sort:'name',order:'asc']):(User.findAllByDepartment_idAndModstatus(oDepartment?.id,1)+(oDepartment?.is_cashextstaff?User.findAllByModstatusAndCashaccessAndUsergroup_idNotEqualAndDepartment_idNotEqual(1,0,1,oDepartment?.id):[])).sort{it.name}]
+    return [perslist:oDepartment?.is_tehdir?User.findAllByDepartment_idAndModstatusAndPers_idInList(0,1,Pers.findAllByPerstype(2).collect{it.id},[sort:'name',order:'asc']):(User.findAllByDepartment_idInListAndModstatus(Department.findAllByIdOrParent(oDepartment?.id?:0,oDepartment?.id?:-1).collect{it.id}?:[],1)+(oDepartment?.is_cashextstaff?User.findAllByModstatusAndCashaccessAndUsergroup_idNotEqualAndDepartment_idNotEqual(1,0,1,oDepartment?.id):[])).sort{it.name}]
   }
 
   def updatedepcashrecord = {
